@@ -6,6 +6,8 @@ import com.dh.demo.entity.Hotel;
 import com.dh.demo.repository.CityRepository;
 import com.dh.demo.repository.HotelRepository;
 import com.dh.demo.service.IHotelService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
@@ -79,13 +81,10 @@ public class HotelService implements IHotelService {
     }
 
     @Override
-    public List<HotelDto> findAll() {
+    public Page<HotelDto> findAll(Pageable pageable) {
 
-        List<Hotel> hotels = repository.findAll();
-
-        return hotels.stream()
-                .map(this::mapToDto)
-                .toList();
+        Page<Hotel> hotels = repository.findAll(pageable);
+        return hotels.map(this::mapToDto);
     }
 
     private static Hotel getHotel(HotelDto hotelDto) {
