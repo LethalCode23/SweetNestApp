@@ -1,0 +1,51 @@
+package com.dh.demo.controller;
+
+import com.dh.demo.dto.HotelDto;
+import com.dh.demo.service.IHotelService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import java.util.List;
+
+@CrossOrigin(origins = "http://localhost:5173")
+@RestController
+@RequestMapping("/hotel")
+public class HotelController {
+
+    private final IHotelService service;
+
+    public HotelController(IHotelService service) {
+        this.service = service;
+    }
+
+    @PostMapping("/save")
+    public ResponseEntity<HotelDto> save(@RequestBody HotelDto hotelDto) {
+        HotelDto saved = service.save(hotelDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+    }
+
+    @GetMapping("/findById/{id}")
+    public ResponseEntity<HotelDto> findById(@PathVariable Integer id) {
+        return service.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<HotelDto>> findAll() {
+        return ResponseEntity.ok(service.findAll());
+    }
+
+    @PutMapping("/update/{id}")
+    public ResponseEntity<HotelDto> update(@PathVariable Integer id,
+                                           @RequestBody HotelDto hotelDto) {
+        HotelDto updated = service.update(id, hotelDto);
+        return ResponseEntity.ok(updated);
+    }
+
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Integer id) {
+        service.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+}

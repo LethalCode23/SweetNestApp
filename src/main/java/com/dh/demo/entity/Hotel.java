@@ -1,0 +1,102 @@
+package com.dh.demo.entity;
+
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "hotel")
+public class Hotel {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "hotSec")
+    private Integer hotSec;
+
+    @Column(name = "hotName")
+    private String hotName;
+
+    @Column(name = "hotDescription")
+    private String hotDescription;
+
+    @Column(name = "hotAddress")
+    private String hotAddress;
+
+    @Column(name = "hotCost")
+    private int hotCost;
+
+    @ManyToOne
+    @JoinColumn(name = "hotCitSec", nullable = false)
+    private City city;
+
+    @Column(name = "hotState")
+    private Character hotState;
+
+    @Column(name = "hotImgUrl")
+    private String hotImgUrl;
+
+    public Hotel() {
+    }
+
+    public Integer getHotSec() {
+        return hotSec;
+    }
+
+    public void setHotSec(Integer hotSec) {
+        this.hotSec = hotSec;
+    }
+
+    public String getHotName() {
+        return hotName;
+    }
+
+    public void setHotName(String hotName) {
+        this.hotName = hotName;
+    }
+
+    public String getHotDescription() {
+        return hotDescription;
+    }
+
+    public void setHotDescription(String hotDescription) {
+        this.hotDescription = hotDescription;
+    }
+
+    public String getHotAddress() {
+        return hotAddress;
+    }
+
+    public void setHotAddress(String hotAddress) {
+        this.hotAddress = hotAddress;
+    }
+
+    public int getHotCost() {
+        return hotCost;
+    }
+
+    public void setHotCost(int hotCost) {
+        this.hotCost = hotCost;
+    }
+
+    public Character getHotState() {
+        return hotState;
+    }
+
+    public City getCity() {
+        return city;
+    }
+
+    public void setCity(City city) {
+        this.city = city;
+    }
+
+    public void setHotState(Character hotState) {
+        this.hotState = hotState;
+    }
+
+    public String getHotImgUrl() {
+        return hotImgUrl;
+    }
+
+    public void setHotImgUrl(String hotImgUrl) {
+        this.hotImgUrl = hotImgUrl;
+    }
+}
