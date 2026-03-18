@@ -1,7 +1,6 @@
 package com.dh.demo.entity;
 
 import jakarta.persistence.*;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -95,11 +94,11 @@ public class Hotel {
         this.hotState = hotState;
     }
 
-    public List<com.dh.demo.entity.HotelImages> getHotelImages() {
+    public List<HotelImages> getHotelImages() {
         return HotelImages;
     }
 
-    public void setHotelImages(List<com.dh.demo.entity.HotelImages> hotelImages) {
+    public void setHotelImages(List<HotelImages> hotelImages) {
         HotelImages = hotelImages;
     }
 }

@@ -1,5 +1,7 @@
 package com.dh.demo.dto;
 
+import java.util.List;
+
 public class HotelDto {
 
     private Integer hotSec;
@@ -9,6 +11,7 @@ public class HotelDto {
     private int hotCost;
     private Character hotState;
     private Integer hotCitSec;
+    private List<String> hotelImagesUrl;
 
     public HotelDto() {
 
@@ -79,5 +82,13 @@ public class HotelDto {
 
     public void setHotCitSec(Integer hotCitSec) {
         this.hotCitSec = hotCitSec;
+    }
+
+    public List<String> getImageUrls() {
+        return hotelImagesUrl;
+    }
+
+    public void setImageUrls(List<String> hotelImagesUrl) {
+        this.hotelImagesUrl = hotelImagesUrl;
     }
 }

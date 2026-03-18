@@ -3,6 +3,7 @@ package com.dh.demo.service.impl;
 import com.dh.demo.dto.HotelDto;
 import com.dh.demo.entity.City;
 import com.dh.demo.entity.Hotel;
+import com.dh.demo.entity.HotelImages;
 import com.dh.demo.repository.CityRepository;
 import com.dh.demo.repository.HotelRepository;
 import com.dh.demo.service.IHotelService;
@@ -11,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class HotelService implements IHotelService {
@@ -141,7 +143,14 @@ public class HotelService implements IHotelService {
                         : null
         );
 
+        if (hotel.getHotelImages() != null && !hotel.getHotelImages().isEmpty()) {
+
+            List<String> imageUrls = hotel.getHotelImages().stream()
+                    .map(HotelImages::getHotImgUrl)
+                    .collect(Collectors.toList());
+            dto.setImageUrls(imageUrls);
+        }
+
         return dto;
     }
-
 }
