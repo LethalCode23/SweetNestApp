@@ -9,8 +9,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @CrossOrigin(origins = "http://localhost:5173")
 @RestController
 @RequestMapping("/hotel")
@@ -33,6 +31,13 @@ public class HotelController {
         return service.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/findByHotel")
+    public ResponseEntity<Page<HotelDto>> findByHotel(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size,
+                                                      @RequestParam(defaultValue = "") String citName) {
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok(service.findByHotel(citName, pageable));
     }
 
     @GetMapping("/all")

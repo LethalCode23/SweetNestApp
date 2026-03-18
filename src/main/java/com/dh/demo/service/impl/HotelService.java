@@ -33,7 +33,6 @@ public class HotelService implements IHotelService {
         hotel.setHotAddress(hotelDto.getHotAddress());
         hotel.setHotCost(hotelDto.getHotCost());
         hotel.setHotState(hotelDto.getHotState());
-        hotel.setHotImgUrl(hotelDto.getHotImgUrl());
 
         City city = cityRepository.findById(hotelDto.getHotCitSec())
                 .orElseThrow(() -> new RuntimeException("City not found"));
@@ -48,8 +47,7 @@ public class HotelService implements IHotelService {
                 savedHotel.getHotAddress(),
                 savedHotel.getHotCost(),
                 savedHotel.getHotState(),
-                savedHotel.getCity().getCitSec(),
-                savedHotel.getHotImgUrl()
+                savedHotel.getCity().getCitSec()
         );
     }
 
@@ -65,25 +63,49 @@ public class HotelService implements IHotelService {
                         hotel.getHotAddress(),
                         hotel.getHotCost(),
                         hotel.getHotState(),
-                        hotel.getCity() != null ? hotel.getCity().getCitSec() : null,
-                        hotel.getHotImgUrl()
+                        hotel.getCity() != null ? hotel.getCity().getCitSec() : null
                 ));
     }
 
     @Override
     public HotelDto update(Integer id, HotelDto hotelDto) {
+
+        Hotel hotel = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Hotel no found"));
+
+        City city = cityRepository.findById(hotelDto.getHotCitSec())
+                .orElseThrow(() -> new RuntimeException("City no found"));
+
+        hotel.setHotName(hotelDto.getHotName());
+        hotel.setHotDescription(hotelDto.getHotDescription());
+        hotel.setHotAddress(hotelDto.getHotAddress());
+        hotel.setHotCost(hotelDto.getHotCost());
+        hotel.setCity(city);
+        hotel.setHotState(hotelDto.getHotState());
+
+        Hotel updated = repository.save(hotel);
+
         return null;
     }
 
     @Override
     public void delete(Integer id) {
-
+        this.repository.deleteById(id);
     }
 
     @Override
     public Page<HotelDto> findAll(Pageable pageable) {
 
         Page<Hotel> hotels = repository.findAll(pageable);
+        return hotels.map(this::mapToDto);
+    }
+
+    @Override
+    public Page<HotelDto> findByHotel(String citName, Pageable pageable) {
+
+        Page<Hotel> hotels = repository
+                .findByCity_CitNameContainingIgnoreCase(citName, pageable);
+
         return hotels.map(this::mapToDto);
     }
 
@@ -112,7 +134,6 @@ public class HotelService implements IHotelService {
         dto.setHotAddress(hotel.getHotAddress());
         dto.setHotCost(hotel.getHotCost());
         dto.setHotState(hotel.getHotState());
-        dto.setHotImgUrl(hotel.getHotImgUrl());
 
         dto.setHotCitSec(
                 hotel.getCity() != null

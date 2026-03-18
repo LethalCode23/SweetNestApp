@@ -19,4 +19,6 @@ public interface IHotelService {
     void delete(Integer id);
 
     Page<HotelDto> findAll(Pageable pageable);
+
+    Page<HotelDto> findByHotel(String citName, Pageable pageable);
 }

@@ -2,6 +2,9 @@ package com.dh.demo.entity;
 
 import jakarta.persistence.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "hotel")
 public class Hotel {
@@ -30,8 +33,8 @@ public class Hotel {
     @Column(name = "hotState")
     private Character hotState;
 
-    @Column(name = "hotImgUrl")
-    private String hotImgUrl;
+    @OneToMany(mappedBy = "hotel", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<HotelImages> HotelImages = new ArrayList<>();
 
     public Hotel() {
     }
@@ -92,11 +95,11 @@ public class Hotel {
         this.hotState = hotState;
     }
 
-    public String getHotImgUrl() {
-        return hotImgUrl;
+    public List<com.dh.demo.entity.HotelImages> getHotelImages() {
+        return HotelImages;
     }
 
-    public void setHotImgUrl(String hotImgUrl) {
-        this.hotImgUrl = hotImgUrl;
+    public void setHotelImages(List<com.dh.demo.entity.HotelImages> hotelImages) {
+        HotelImages = hotelImages;
     }
 }

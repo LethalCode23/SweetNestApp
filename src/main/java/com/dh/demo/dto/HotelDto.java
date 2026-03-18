@@ -9,14 +9,13 @@ public class HotelDto {
     private int hotCost;
     private Character hotState;
     private Integer hotCitSec;
-    private String hotImgUrl;
 
     public HotelDto() {
 
     }
 
     public HotelDto(Integer hotSec, String hotName, String hotDescription, String hotAddress, int hotCost, Character hotState,
-                    Integer hotCitSec, String hotImgUrl) {
+                    Integer hotCitSec) {
         this.hotSec = hotSec;
         this.hotName = hotName;
         this.hotDescription = hotDescription;
@@ -24,7 +23,6 @@ public class HotelDto {
         this.hotCost = hotCost;
         this.hotState = hotState;
         this.hotCitSec = hotCitSec;
-        this.hotImgUrl = hotImgUrl;
     }
 
     public Integer getHotSec() {
@@ -81,13 +79,5 @@ public class HotelDto {
 
     public void setHotCitSec(Integer hotCitSec) {
         this.hotCitSec = hotCitSec;
-    }
-
-    public String getHotImgUrl() {
-        return hotImgUrl;
-    }
-
-    public void setHotImgUrl(String hotImgUrl) {
-        this.hotImgUrl = hotImgUrl;
     }
 }
