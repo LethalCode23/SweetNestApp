@@ -13,8 +13,5 @@ public class FileStorageConfig implements WebMvcConfigurer {
         registry.addResourceHandler("/hotel-images/**")
                 .addResourceLocations("file:uploads/hotel-images/")
                 .setCachePeriod(3600); // Cache de 1 hora
-
-        System.out.println("✅ Configuración de archivos estáticos aplicada");
-        System.out.println("📁 Sirviendo archivos desde: uploads/hotel-images/");
     }
 }

@@ -9,9 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@CrossOrigin(origins = "http://localhost:5173")
 @RestController
-@RequestMapping("/hotel")
+@RequestMapping("api/hotel")
 public class HotelController {
 
     private final IHotelService service;
