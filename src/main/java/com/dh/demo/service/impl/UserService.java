@@ -44,6 +44,7 @@ public class UserService implements IUserService {
     public UserDto login(LoginRequest loginRequest) {
 
         authenticationManager.authenticate(
+
                 new UsernamePasswordAuthenticationToken(
                         loginRequest.getEmail(),
                         loginRequest.getPassword()

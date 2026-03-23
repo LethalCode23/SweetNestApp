@@ -1,9 +1,11 @@
-package com.dh.demo.controller;
+package com.dh.demo.authentication;
 
 import com.dh.demo.authentication.LoginRequest;
 import com.dh.demo.authentication.RegisterRequest;
+import com.dh.demo.config.i18n.MessageService;
 import com.dh.demo.dto.UserDto;
 import com.dh.demo.service.impl.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,29 +20,22 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final UserService userService;
+    private final MessageService messageService;
 
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody RegisterRequest request) {
-
-        System.out.println("Datos recibidos: " + request.toString());
-        if (request.getFirstName() == null || request.getLastName() == null
-                || request.getEmail() == null || request.getPassword() == null) {
-
-            return new ResponseEntity<>("Data is empty", HttpStatus.BAD_REQUEST);
-        }
+    public ResponseEntity<String> register(@Valid @RequestBody RegisterRequest request) {
 
         userService.save(request);
-        return new ResponseEntity<>("User successfully registered", HttpStatus.CREATED);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(messageService.getMessage("user.register.success"));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<UserDto> login(@RequestBody LoginRequest request) {
-
-        if (request.getEmail() == null && request.getPassword() == null) {
-
-        }
+    public ResponseEntity<UserDto> login(@Valid @RequestBody LoginRequest request) {
 
         UserDto userAuthenticated = userService.login(request);
-        return ResponseEntity.ok(userAuthenticated);
+        return ResponseEntity
+                .ok(userAuthenticated);
     }
 }

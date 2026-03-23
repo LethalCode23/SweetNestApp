@@ -1,5 +1,8 @@
 package com.dh.demo.authentication;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 @Getter // Genera los get
@@ -10,8 +13,15 @@ import lombok.*;
 @Builder
 public class RegisterRequest {
 
+    @NotBlank(message = "{validation.required}")
     private String firstName;
+
+    @NotBlank(message = "{validation.required}")
     private String lastName;
+
+    @Email
     private String email;
+
+    @Size(min = 6)
     private String password;
 }
