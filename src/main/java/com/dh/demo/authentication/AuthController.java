@@ -1,7 +1,5 @@
 package com.dh.demo.authentication;
 
-import com.dh.demo.authentication.LoginRequest;
-import com.dh.demo.authentication.RegisterRequest;
 import com.dh.demo.config.i18n.MessageService;
 import com.dh.demo.dto.UserDto;
 import com.dh.demo.service.impl.UserService;
