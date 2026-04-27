@@ -34,3 +34,17 @@ Nuestra solución consiste en una aplicación web de arquitectura cliente-servid
 # Guía de instalación
   El proyecto cuenta con una base de datos en memoria, lo que facilita la ejecución del proyecto. El frontend está desarrollado en React con JavaScript y Vite, el backend está construido 
   con Spring Boot y Java.
+
+# Planificación y ejecución de los tests
+  Se diseñaron y ejecutaron pruebas basadas en las historias de usuario del Sprint 1.
+
+  # Plan de pruebas
+  | ID | Escenario de prueba | Resultado esperado | Estado |
+  | :--- | :--- | :--- | :--- |
+  | **TC-01** | Persistencia del Header al hacer scroll. | El header permanece fijo en la parte superior. | ✅ Pass |
+  | **TC-02** | Visualización en dispositivos móviles. | Diseño 100% responsivo sin errores visuales. | ✅ Pass |
+  | **TC-03** | Registro de producto con nombre duplicado. | El sistema muestra alerta de error y bloquea el registro. | ✅ Pass |
+  | **TC-04** | Aleatoriedad del catálogo en el Home. | Los productos cambian de orden al recargar y no se repiten. | ✅ Pass |
+  
+  # Evidencia de ejecución
+  Las pruebas fueron realizadas de forma manual en el entorno de desarrollo, validando la persistencia de los datos en la base de datos en memoria y la correcta comunicación entre el frontend (React) y el backend (Spring Boot).
