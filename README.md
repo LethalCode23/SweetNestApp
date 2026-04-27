@@ -48,3 +48,9 @@ Nuestra solución consiste en una aplicación web de arquitectura cliente-servid
   
   # Evidencia de ejecución
   Las pruebas fueron realizadas de forma manual en el entorno de desarrollo, validando la persistencia de los datos en la base de datos en memoria y la correcta comunicación entre el frontend (React) y el backend (Spring Boot).
+
+# Logotipo
+![Logo SweetNest](https://raw.githubusercontent.com/LethalCode23/SweetNestUI/main/src/assets/SweetNestLogo.ico)
+
+# Paleta de Colores
+![Paleta de Colores](https://raw.githubusercontent.com/LethalCode23/SweetNestUI/main/src/assets/PaletadeColores.png)
