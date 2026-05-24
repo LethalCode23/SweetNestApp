@@ -31,7 +31,7 @@ public class JwtService {
         return Jwts.builder().setClaims(extractClaims)
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000*60*24))
+                .setExpiration(new Date(System.currentTimeMillis() + + 1000L * 60 * 60 * 24)) // El token duraria unas 24hrs
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
