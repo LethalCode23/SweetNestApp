@@ -1,8 +1,10 @@
 package com.dh.demo.config;
 
+import com.dh.demo.entity.Category;
 import com.dh.demo.entity.City;
 import com.dh.demo.entity.Department;
 import com.dh.demo.entity.Pais;
+import com.dh.demo.repository.CategoryRepository;
 import com.dh.demo.repository.CityRepository;
 import com.dh.demo.repository.DepartmentRepository;
 import com.dh.demo.repository.PaisRepository;
@@ -16,13 +18,18 @@ public class DataInitializer implements ApplicationRunner {
     private final PaisRepository paisRepository;
     private final DepartmentRepository departmentRepository;
     private final CityRepository cityRepository;
+    private final CategoryRepository categoryRepository;
 
     public DataInitializer(PaisRepository paisRepository,
                            DepartmentRepository departmentRepository,
-                           CityRepository cityRepository) {
+                           CityRepository cityRepository,
+                           CategoryRepository categoryRepository
+    ) {
+
         this.paisRepository = paisRepository;
         this.departmentRepository = departmentRepository;
         this.cityRepository = cityRepository;
+        this.categoryRepository = categoryRepository;
     }
 
     @Override
@@ -86,6 +93,11 @@ public class DataInitializer implements ApplicationRunner {
         createCity("Ciudad de México", cdmx);
         createCity("Guadalajara",      jalisco);
         createCity("Zapopan",          jalisco);
+
+        // - Categories ─────────────────────────────────────────────────
+        createCategory("Playa", 'A');
+        createCategory("Boutique", 'A');
+        createCategory("Económico", 'A');
     }
 
     private Department CreateDepartment(String name, Pais country) {
@@ -106,5 +118,15 @@ public class DataInitializer implements ApplicationRunner {
         city.setDepartment(department);
         city.setCitState('A');
         cityRepository.save(city);
+    }
+
+    private void createCategory(String catName, Character catSte) {
+
+        Category category = new Category();
+
+        category.setCatName(catName);
+        category.setCatEst(catSte);
+
+        categoryRepository.save(category);
     }
 }

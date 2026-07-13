@@ -1,9 +1,12 @@
 package com.dh.demo.service.impl;
 
+import com.dh.demo.dto.CategoryDto;
 import com.dh.demo.dto.HotelDto;
+import com.dh.demo.entity.Category;
 import com.dh.demo.entity.City;
 import com.dh.demo.entity.Hotel;
 import com.dh.demo.entity.HotelImages;
+import com.dh.demo.repository.CategoryRepository;
 import com.dh.demo.repository.CityRepository;
 import com.dh.demo.repository.HotelRepository;
 import com.dh.demo.service.IHotelService;
@@ -19,10 +22,12 @@ public class HotelService implements IHotelService {
 
     private final HotelRepository repository;
     private final CityRepository cityRepository;
+    private final CategoryRepository categoryRepository;
 
-    public HotelService(HotelRepository repository, CityRepository cityRepository) {
+    public HotelService(HotelRepository repository, CityRepository cityRepository, CategoryRepository categoryRepository) {
         this.repository = repository;
         this.cityRepository = cityRepository;
+        this.categoryRepository = categoryRepository;
     }
 
     @Override
@@ -39,6 +44,12 @@ public class HotelService implements IHotelService {
         City city = cityRepository.findById(hotelDto.getHotCitSec())
                 .orElseThrow(() -> new RuntimeException("City not found"));
 
+        if (hotelDto.getCategoryIds() != null && !hotelDto.getCategoryIds().isEmpty()) {
+
+            List<Category> categories = categoryRepository.findAllById(hotelDto.getCategoryIds());
+            hotel.setCategories(categories);
+        }
+
         hotel.setCity(city);
         Hotel savedHotel = repository.save(hotel);
 
@@ -49,7 +60,8 @@ public class HotelService implements IHotelService {
                 savedHotel.getHotAddress(),
                 savedHotel.getHotCost(),
                 savedHotel.getHotState(),
-                savedHotel.getCity().getCitSec()
+                savedHotel.getCity().getCitSec(),
+                savedHotel.getCity().getCitName()
         );
     }
 
@@ -65,7 +77,8 @@ public class HotelService implements IHotelService {
                         hotel.getHotAddress(),
                         hotel.getHotCost(),
                         hotel.getHotState(),
-                        hotel.getCity() != null ? hotel.getCity().getCitSec() : null
+                        hotel.getCity() != null ? hotel.getCity().getCitSec() : null,
+                        hotel.getCity() != null ? hotel.getCity().getCitName() : null
                 ));
     }
 
@@ -143,12 +156,33 @@ public class HotelService implements IHotelService {
                         : null
         );
 
+        dto.setHotCitName(
+                hotel.getCity() != null
+                        ? hotel.getCity().getCitName()
+                        : null
+        );
+
         if (hotel.getHotelImages() != null && !hotel.getHotelImages().isEmpty()) {
 
             List<String> imageUrls = hotel.getHotelImages().stream()
                     .map(HotelImages::getHotImgUrl)
                     .collect(Collectors.toList());
             dto.setImageUrls(imageUrls);
+        }
+
+        if (hotel.getCategories() != null) {
+
+            List<CategoryDto> categoryDto = hotel.getCategories().stream()
+                    .map(category -> {
+                        CategoryDto cDto = new CategoryDto();
+                        cDto.setCatSec(category.getCatSec());
+                        cDto.setCatName(category.getCatName());
+                        cDto.setCatEst(category.getCatEst());
+                        return cDto;
+                    })
+                    .collect(Collectors.toList());
+
+            dto.setCategories(categoryDto);
         }
 
         return dto;

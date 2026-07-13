@@ -35,7 +35,16 @@ public class Hotel {
     @OneToMany(mappedBy = "hotel", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<HotelImages> HotelImages = new ArrayList<>();
 
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinTable(
+            name = "hotel_category",
+            joinColumns = @JoinColumn(name = "hotSec_fk", referencedColumnName = "hotSec"), // FK de Hotel
+            inverseJoinColumns = @JoinColumn(name = "CatSec_fk", referencedColumnName = "CatSec") // FK de Category
+    )
+    private List<Category> Categories = new ArrayList<>();
+
     public Hotel() {
+
     }
 
     public Integer getHotSec() {
@@ -100,5 +109,13 @@ public class Hotel {
 
     public void setHotelImages(List<HotelImages> hotelImages) {
         HotelImages = hotelImages;
+    }
+
+    public List<Category> getCategories() {
+        return Categories;
+    }
+
+    public void setCategories(List<Category> categories) {
+        this.Categories = categories;
     }
 }

@@ -14,7 +14,6 @@ public class CityDto {
         this.citState = citState;
     }
 
-
     public Integer getCitSec() {
         return citSec;
     }
