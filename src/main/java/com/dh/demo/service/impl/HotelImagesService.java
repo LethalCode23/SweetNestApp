@@ -55,6 +55,7 @@ public class HotelImagesService implements IHotelImagesService {
 
             return new HotelImagesDto(hotelImagesSave.getHotImgSec(),
                     hotelImagesDto.getHotSec(),
+                    fileUrl,
                     hotelImages.getHotImgPri());
 
         } catch (Exception e) {

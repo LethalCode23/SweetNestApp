@@ -18,7 +18,7 @@ public class HotelImages {
     @Column(name = "hotImgUrl")
     private String hotImgUrl;
 
-    @Column(name = "hotImg")
+    @Column(name = "hotImgPri")
     private int hotImgPri;
 
     public HotelImages() {

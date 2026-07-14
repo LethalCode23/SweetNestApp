@@ -12,7 +12,7 @@ public class HotelDto {
     private Character hotState;
     private Integer hotCitSec;
     private String hotCitName;
-    private List<String> hotelImagesUrl;
+    private List<HotelImagesDto> hotelImagesUrl;
     private List<Integer> categoryIds;
     private List<CategoryDto> categories;
 
@@ -33,7 +33,7 @@ public class HotelDto {
     }
 
     public HotelDto(Integer hotSec, String hotName, String hotDescription, String hotAddress, int hotCost, Character hotState,
-                    Integer hotCitSec, String hotCitName, List<String> hotelImagesUrl, List<Integer> categoryIds, List<CategoryDto> categories) {
+                    Integer hotCitSec, String hotCitName, List<HotelImagesDto> hotelImagesUrl, List<Integer> categoryIds, List<CategoryDto> categories) {
         this.hotSec = hotSec;
         this.hotName = hotName;
         this.hotDescription = hotDescription;
@@ -103,14 +103,6 @@ public class HotelDto {
         this.hotCitSec = hotCitSec;
     }
 
-    public List<String> getImageUrls() {
-        return hotelImagesUrl;
-    }
-
-    public void setImageUrls(List<String> hotelImagesUrl) {
-        this.hotelImagesUrl = hotelImagesUrl;
-    }
-
     public List<Integer> getCategoryIds() {
         return categoryIds;
     }
@@ -135,11 +127,11 @@ public class HotelDto {
         this.hotCitName = hotCitName;
     }
 
-    public List<String> getHotelImagesUrl() {
+    public List<HotelImagesDto> getHotelImagesUrl() {
         return hotelImagesUrl;
     }
 
-    public void setHotelImagesUrl(List<String> hotelImagesUrl) {
+    public void setHotelImagesUrl(List<HotelImagesDto> hotelImagesUrl) {
         this.hotelImagesUrl = hotelImagesUrl;
     }
 }

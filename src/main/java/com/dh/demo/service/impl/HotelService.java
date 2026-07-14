@@ -2,6 +2,7 @@ package com.dh.demo.service.impl;
 
 import com.dh.demo.dto.CategoryDto;
 import com.dh.demo.dto.HotelDto;
+import com.dh.demo.dto.HotelImagesDto;
 import com.dh.demo.entity.Category;
 import com.dh.demo.entity.City;
 import com.dh.demo.entity.Hotel;
@@ -164,10 +165,21 @@ public class HotelService implements IHotelService {
 
         if (hotel.getHotelImages() != null && !hotel.getHotelImages().isEmpty()) {
 
-            List<String> imageUrls = hotel.getHotelImages().stream()
+            /*List<String> imageUrls = hotel.getHotelImages().stream()
                     .map(HotelImages::getHotImgUrl)
                     .collect(Collectors.toList());
-            dto.setImageUrls(imageUrls);
+            dto.setImageUrls(imageUrls);*/
+
+            List<HotelImagesDto> imagesUrls = hotel.getHotelImages().stream()
+                    .map(img -> new HotelImagesDto(
+                            img.getHotImgSec(),
+                            hotel.getHotSec(),
+                            img.getHotImgUrl(),
+                            img.getHotImgPri()
+                    ))
+                    .collect(Collectors.toList());
+
+            dto.setHotelImagesUrl(imagesUrls);
         }
 
         if (hotel.getCategories() != null) {

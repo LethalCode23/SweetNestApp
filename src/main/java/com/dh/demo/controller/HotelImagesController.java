@@ -24,7 +24,8 @@ public class HotelImagesController {
                                                @RequestParam("hotImgPri") int hotImgPri,
                                                @RequestParam("file") MultipartFile file) {
         try {
-            HotelImagesDto saved = service.save(new HotelImagesDto(null, hotSec, hotImgPri), file);
+
+            HotelImagesDto saved = service.save(new HotelImagesDto(null, hotSec, null, hotImgPri), file);
             return ResponseEntity.ok(saved);
         } catch (InvalidFileException e) {
             return ResponseEntity.badRequest().build();
@@ -32,6 +33,17 @@ public class HotelImagesController {
 
             System.err.println("Error guardando la imagen: " + e.getMessage());
             e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @DeleteMapping("/delete/{hotImgSec}")
+    public ResponseEntity<Void> delete(@PathVariable Integer hotImgSec) {
+
+        try {
+            service.delete(hotImgSec);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
