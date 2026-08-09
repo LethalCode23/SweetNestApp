@@ -2,17 +2,19 @@ package com.dh.demo.service.impl;
 
 import com.dh.demo.dto.CategoryDto;
 import com.dh.demo.dto.HotelDto;
+import com.dh.demo.dto.HotelFilterDto;
 import com.dh.demo.dto.HotelImagesDto;
 import com.dh.demo.entity.Category;
 import com.dh.demo.entity.City;
 import com.dh.demo.entity.Hotel;
-import com.dh.demo.entity.HotelImages;
 import com.dh.demo.repository.CategoryRepository;
 import com.dh.demo.repository.CityRepository;
 import com.dh.demo.repository.HotelRepository;
 import com.dh.demo.service.IHotelService;
+import com.dh.demo.specification.HotelSpecification;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
@@ -117,12 +119,13 @@ public class HotelService implements IHotelService {
     }
 
     @Override
-    public Page<HotelDto> findByHotel(String citName, Pageable pageable) {
+    public Page<HotelDto> findByHotel(HotelFilterDto hotelFilterDto, Pageable pageable) {
 
-        Page<Hotel> hotels = repository
-                .findByCity_CitNameContainingIgnoreCase(citName, pageable);
+        // Page<Hotel> hotels = repository.findByCity_CitNameContainingIgnoreCase(citName, pageable);
 
-        return hotels.map(this::mapToDto);
+        Specification<Hotel> specification = HotelSpecification.withFilters(hotelFilterDto);
+        // return hotels.map(this::mapToDto);
+        return repository.findAll(specification, pageable).map(this::mapToDto);
     }
 
     private static Hotel getHotel(HotelDto hotelDto) {

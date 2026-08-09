@@ -23,20 +23,30 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "userSec")
     private Long userSec;
+
+    @Column(name = "userEmail", unique = true, nullable = false)
+    private String userEmail;
+
     @Column(name = "userFirstName")
     private String userFirstName;
+
     @Column(name = "userLastName")
     private String userLastName;
-    @Column(name = "userEmail")
-    private String userEmail;
+
     @Column(name = "userPass")
     private String userPass;
-    @Enumerated(EnumType.STRING)
-    private Role userRole;
+
+    // el rol lo manejan los perfiles
+    /*@Enumerated(EnumType.STRING)
+    private Role userRole;*/
+
+    @ManyToOne
+    @JoinColumn(name = "profile_id", nullable = false)
+    private Profile profile;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(userRole.name()));
+        return List.of(new SimpleGrantedAuthority(profile.getName()));
     }
 
     @Override

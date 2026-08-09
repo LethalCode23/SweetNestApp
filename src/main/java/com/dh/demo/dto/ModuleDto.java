@@ -1,6 +1,5 @@
 package com.dh.demo.dto;
 
-import com.dh.demo.entity.Role;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,10 +9,11 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserDto {
+public class ModuleDto {
 
-    private String firstName;
-    private String lastName;
-    private String email;
-    private ProfileDto profile;
+    private long moduleSec;
+    private String moduleName;
+    private String moduleUrl;
+    private String moduleDescription;
+    private Character moduleState;
 }

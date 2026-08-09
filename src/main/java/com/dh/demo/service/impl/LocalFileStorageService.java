@@ -23,10 +23,17 @@ public class LocalFileStorageService implements IFileStorageService {
     public String store(MultipartFile file, String subfolder) {
         try {
 
+            System.out.println("Working dir: " + System.getProperty("user.dir"));
+
             String fileName = UUID.randomUUID() + "_" +
                     StringUtils.cleanPath(file.getOriginalFilename());
 
             Path uploadPath = Paths.get(uploadDir, subfolder);
+
+            System.out.println("Upload path absoluto: " + uploadPath.toAbsolutePath());
+            System.out.println("¿Existe uploadPath?: " + Files.exists(uploadPath));
+            System.out.println("¿Es directorio?: " + Files.isDirectory(uploadPath));
+
             Files.createDirectories(uploadPath);
 
             Path filePath = uploadPath.resolve(fileName);

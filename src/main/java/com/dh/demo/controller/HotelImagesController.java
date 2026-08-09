@@ -31,7 +31,7 @@ public class HotelImagesController {
             return ResponseEntity.badRequest().build();
         } catch (FileStorageException e) {
 
-            System.err.println("Error guardando la imagen: " + e.getMessage());
+            System.err.println("Error al guardar la imagen : " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }

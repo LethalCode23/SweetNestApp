@@ -2,6 +2,8 @@ package com.dh.demo.authentication;
 
 import com.dh.demo.config.i18n.MessageService;
 import com.dh.demo.dto.UserDto;
+import com.dh.demo.dto.response.ApiResponse;
+import com.dh.demo.dto.response.LoginResponseDto;
 import com.dh.demo.service.impl.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,10 +32,15 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<UserDto> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<ApiResponse<LoginResponseDto>> login(@Valid @RequestBody LoginRequest request) {
 
-        UserDto userAuthenticated = userService.login(request);
-        return ResponseEntity
-                .ok(userAuthenticated);
+        LoginResponseDto userAuthenticated = userService.login(request);
+
+        ApiResponse<LoginResponseDto> body = ApiResponse.success(
+                "El usuario inició sesión correctamente",
+                userAuthenticated
+        );
+
+        return ResponseEntity.ok(body);
     }
 }

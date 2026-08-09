@@ -1,7 +1,9 @@
 package com.dh.demo.authentication;
 
+import com.dh.demo.entity.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
@@ -24,4 +26,7 @@ public class RegisterRequest {
 
     @Size(min = 6)
     private String password;
+
+    @NotNull(message = "{validation.required}")
+    private Long profileId;
 }
