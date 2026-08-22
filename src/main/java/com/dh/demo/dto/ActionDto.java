@@ -9,10 +9,9 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ProfileDto {
+public class ActionDto {
 
-    private long proId;
-    private String proName;
-    private Character proState;
-    private Character isDefault;
+    private Character code;
+    private String name;
+    private Boolean allowed;
 }

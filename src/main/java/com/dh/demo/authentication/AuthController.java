@@ -1,13 +1,12 @@
 package com.dh.demo.authentication;
 
 import com.dh.demo.config.i18n.MessageService;
-import com.dh.demo.dto.UserDto;
 import com.dh.demo.dto.response.ApiResponse;
 import com.dh.demo.dto.response.LoginResponseDto;
+import com.dh.demo.dto.response.RegisterResponseDto;
 import com.dh.demo.service.impl.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -23,12 +22,16 @@ public class AuthController {
     private final MessageService messageService;
 
     @PostMapping("/register")
-    public ResponseEntity<String> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<ApiResponse<RegisterResponseDto>> register(@Valid @RequestBody RegisterRequest request) {
 
-        userService.save(request);
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(messageService.getMessage("user.register.success"));
+        RegisterResponseDto responseDto = userService.save(request);
+
+        ApiResponse<RegisterResponseDto> apiResponse = ApiResponse.success(
+                messageService.getMessage("user.register.success"),
+                responseDto
+        );
+
+        return ResponseEntity.ok(apiResponse);
     }
 
     @PostMapping("/login")
@@ -37,7 +40,7 @@ public class AuthController {
         LoginResponseDto userAuthenticated = userService.login(request);
 
         ApiResponse<LoginResponseDto> body = ApiResponse.success(
-                "El usuario inició sesión correctamente",
+                messageService.getMessage("user.login.success"),
                 userAuthenticated
         );
 

@@ -21,7 +21,7 @@ public class PermissionProfilesModulePer {
     @JoinColumns({
             @JoinColumn(name = "profile_id", referencedColumnName = "profile_id", insertable = false, updatable = false),
             @JoinColumn(name = "module_id", referencedColumnName = "module_id", insertable = false, updatable = false),
-            @JoinColumn(name = "sub_module_name", referencedColumnName = "sub_module_name", insertable = false, updatable = false)
+            @JoinColumn(name = "submodule_id", referencedColumnName = "submodule_id", insertable = false, updatable = false)
     })
     private PermissionProfilesModule permissionProfilesModule;
 
