@@ -4,6 +4,7 @@ import com.dh.demo.entity.PermissionProfiles;
 import com.dh.demo.entity.PermissionProfilesId;
 import com.dh.demo.repository.projection.IModuleAccessProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import java.util.List;
@@ -38,4 +39,13 @@ public interface IPermissionProfilesRepository extends JpaRepository<PermissionP
         WHERE P.ID = :profileId
         """, nativeQuery = true)
     List<IModuleAccessProjection> findModulesWithActionsByProfileId(@Param("profileId") Long profileId);
+
+    @Modifying
+    @Query("UPDATE PermissionProfiles p SET p.entryAllowed = :entryAllowed " +
+            "WHERE p.id.profileId = :profileId AND p.id.moduleId = :moduleId")
+    int updateEntryAllowed(
+            @Param("profileId") Long profileId,
+            @Param("moduleId") Long moduleId,
+            @Param("entryAllowed") Character entryAllowed
+    );
 }

@@ -87,10 +87,19 @@ public class DataInitializer implements ApplicationRunner {
         setupPermissionsForModule(adminProfile, securityModule, securitySubmodules);
 
         // 4. MÓDULO: Mi Cuenta
-        Module profileModule = createModule("Mi Cuenta", "/profile", "Perfil de Usuario", 'A');
-        List<String> profileSubmodules = List.of("profile");
+        Module profileModule = createModule("Mi Cuenta", "/userProfile", "Perfil de Usuario", 'A');
+        List<String> profileSubmodules = List.of("userProfile");
         setupPermissionsForModule(adminProfile, profileModule, profileSubmodules);
         setupPermissionsForModule(userProfile, profileModule, profileSubmodules);
+
+        // 5. MÓDULO: Perfiles
+        Module profilesModule = createModule("Panel de control", "/profiles", "Perfiles", 'A');
+
+        List<String> profilesSubmodules = List.of("profiles");
+        setupPermissionsForModule(adminProfile, profilesModule, profilesSubmodules);
+
+        List<String> PermissionsPage = List.of("PermissionsPage");
+        setupPermissionsForModule(adminProfile, profilesModule, PermissionsPage);
 
         // ── Users ────────────────────────────────────────────────────────────
         createUser("Cristian", "Alexander", "admin@sweetnest.com", "Admin123", adminProfile);

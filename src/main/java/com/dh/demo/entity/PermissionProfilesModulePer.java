@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 @Data
 @Builder
@@ -18,6 +20,7 @@ public class PermissionProfilesModulePer {
     private PermissionProfilesModulePerId id;
 
     @ManyToOne
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumns({
             @JoinColumn(name = "profile_id", referencedColumnName = "profile_id", insertable = false, updatable = false),
             @JoinColumn(name = "module_id", referencedColumnName = "module_id", insertable = false, updatable = false),
