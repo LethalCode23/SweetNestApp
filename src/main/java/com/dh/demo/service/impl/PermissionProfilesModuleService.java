@@ -76,7 +76,7 @@ public class PermissionProfilesModuleService implements IPermissionProfilesModul
                     .id(perId)
                     .permissionProfilesModule(ppm)
                     .actionName(actionLabel(code) + " en " + subModule.getName())
-                    .check('S')
+                    .check('N')
                     .build();
 
             permissionProfilesModulePerRepository.save(per);

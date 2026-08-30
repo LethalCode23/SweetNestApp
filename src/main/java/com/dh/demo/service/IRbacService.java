@@ -7,5 +7,5 @@ public interface IRbacService {
 
     List<ModuleDto> getModulesWithActionsByProfile(Long profileId);
 
-    int updateEntryAllowed(Long profileId, Long moduleId, Boolean entryAllowed);
+    void updateEntryAllowed(Long profileId, Long moduleId, Boolean entryAllowed);
 }

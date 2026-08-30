@@ -15,4 +15,5 @@ public class ProfileDto {
     private String proName;
     private Character proState;
     private Character isDefault;
+    private Character hasControlAccess;
 }

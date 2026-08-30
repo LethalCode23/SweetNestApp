@@ -21,5 +21,5 @@ public class ModuleDto {
     private Boolean entryAllowed;
 
     @Builder.Default
-    private List<SubModuleDto> subModules = new ArrayList<>(); // antes: List<String>
+    private List<SubModuleDto> subModules = new ArrayList<>();
 }

@@ -66,8 +66,8 @@ public class DataInitializer implements ApplicationRunner {
         }
 
         // ── Profiles ─────────────────────────────────────────────────────────
-        Profile adminProfile = createProfile("Administrador", 'A', 'N');
-        Profile userProfile  = createProfile("Usuario", 'A', 'S');
+        Profile adminProfile = createProfile("Administrador", 'A', 'N', 'S');
+        Profile userProfile  = createProfile("Usuario", 'A', 'S', 'N');
 
         // ── Modules & Submodules Setup ───────────────────────────────────────
 
@@ -97,9 +97,6 @@ public class DataInitializer implements ApplicationRunner {
 
         List<String> profilesSubmodules = List.of("profiles");
         setupPermissionsForModule(adminProfile, profilesModule, profilesSubmodules);
-
-        List<String> PermissionsPage = List.of("PermissionsPage");
-        setupPermissionsForModule(adminProfile, profilesModule, PermissionsPage);
 
         // ── Users ────────────────────────────────────────────────────────────
         createUser("Cristian", "Alexander", "admin@sweetnest.com", "Admin123", adminProfile);
@@ -298,12 +295,13 @@ public class DataInitializer implements ApplicationRunner {
                 });
     }
 
-    private Profile createProfile(String name, Character state, Character isDefault) {
+    private Profile createProfile(String name, Character state, Character isDefault, Character hasControlAccess) {
 
         Profile profile = Profile.builder()
                 .name(name)
                 .state(state)
                 .isDefault(isDefault)
+                .hasControlAccess(hasControlAccess)
                 .build();
         return IProfileRepository.save(profile);
     }

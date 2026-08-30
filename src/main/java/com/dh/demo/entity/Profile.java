@@ -27,4 +27,7 @@ public class Profile {
 
     @Column(name = "is_default", nullable = false)
     private Character isDefault;
+
+    @Column(name = "has_control_access")
+    private Character hasControlAccess;
 }

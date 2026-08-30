@@ -1,6 +1,9 @@
 package com.dh.demo.service.impl;
 
+import com.dh.demo.config.i18n.MessageService;
 import com.dh.demo.dto.*;
+import com.dh.demo.mapper.ModuleMapper;
+import com.dh.demo.mapper.ProfileMapper;
 import com.dh.demo.repository.IPermissionProfilesRepository;
 import com.dh.demo.repository.projection.IModuleAccessProjection;
 import com.dh.demo.service.IRbacService;
@@ -15,6 +18,11 @@ import java.util.*;
 public class RbacService implements IRbacService {
 
     private final IPermissionProfilesRepository permissionProfilesRepository;
+    private final ProfileService profileService;
+    private final ModuleService moduleService;
+    private final ModuleMapper moduleMapper;
+    private final ProfileMapper profileMapper;
+    private final MessageService messageService;
 
     @Override
     public List<ModuleDto> getModulesWithActionsByProfile(Long profileId) {
@@ -68,7 +76,36 @@ public class RbacService implements IRbacService {
 
     @Override
     @Transactional
-    public int updateEntryAllowed(Long profileId, Long moduleId, Boolean entryAllowed) {
+    public void updateEntryAllowed(Long profileId, Long moduleId, Boolean entryAllowed) {
+
+        /*Character value = entryAllowed ? 'S' : 'N';
+
+        PermissionProfilesId id = new PermissionProfilesId(profileId, moduleId);
+
+        Optional<PermissionProfiles> existing = permissionProfilesRepository.findById(id);
+
+        if (existing.isPresent()) {
+            permissionProfilesRepository.updateEntryAllowed(profileId, moduleId, value);
+        } else {
+
+            ProfileDto profileDto = profileService.findById(profileId)
+                    .orElseThrow(() -> new EntityNotFoundException(messageService.getMessage("profile.no.found")));
+
+            ModuleDto moduleDto = moduleService.findById(moduleId)
+                    .orElseThrow(() -> new EntityNotFoundException(messageService.getMessage("module.no.found")));
+
+            Module module = moduleMapper.toEntity(moduleDto);
+            Profile profile = profileMapper.toEntity(profileDto);
+
+            PermissionProfiles pp = PermissionProfiles.builder()
+                    .id(id)
+                    .profile(profile)
+                    .module(module)
+                    .entryAllowed(value)
+                    .build();
+
+            permissionProfilesRepository.save(pp);
+        }*/
 
         Character value = entryAllowed ? 'S' : 'N';
         int updatedRows = permissionProfilesRepository.updateEntryAllowed(profileId, moduleId, value);
@@ -79,8 +116,6 @@ public class RbacService implements IRbacService {
                     "No existe permiso para el perfil " + profileId + " en el módulo " + moduleId
             );
         }
-
-        return 0;
     }
 
     private Boolean toBoolean(Character c) {

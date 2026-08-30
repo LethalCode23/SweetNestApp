@@ -81,6 +81,7 @@ public class ProfileService implements IProfileService {
         profile.setId(dto.getProId());
         profile.setName(dto.getProName());
         profile.setState(dto.getProState());
+        profile.setHasControlAccess(dto.getHasControlAccess());
 
         return profile;
     }
@@ -92,6 +93,7 @@ public class ProfileService implements IProfileService {
         dto.setProName(profile.getName());
         dto.setProState(profile.getState());
         dto.setIsDefault(profile.getIsDefault());
+        dto.setHasControlAccess(profile.getHasControlAccess());
 
         return dto;
     }

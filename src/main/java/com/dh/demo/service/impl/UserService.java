@@ -54,7 +54,8 @@ public class UserService implements IUserService {
                 profile.getProId(),
                 profile.getProName(),
                 profile.getProState(),
-                profile.getIsDefault()
+                profile.getIsDefault(),
+                profile.getHasControlAccess()
         );
 
         User user = User.builder()
@@ -98,7 +99,8 @@ public class UserService implements IUserService {
                 profileSearched.getProId(),
                 profileSearched.getProName(),
                 profileSearched.getProState(),
-                profileSearched.getIsDefault()
+                profileSearched.getIsDefault(),
+                profileSearched.getHasControlAccess()
         );
 
         String token = jwtService.generateToken(user);
@@ -167,6 +169,7 @@ public class UserService implements IUserService {
         dto.setProName(profile.getName());
         dto.setProState(profile.getState());
         dto.setIsDefault(profile.getIsDefault());
+        dto.setHasControlAccess(profile.getHasControlAccess());
 
         return dto;
     }
