@@ -29,6 +29,11 @@ public class PermissionProfilesModule implements Serializable {
     private Module module;
 
     @ManyToOne
+    @MapsId("submoduleId")
+    @JoinColumn(name = "submodule_id", insertable = false, updatable = false)
+    private SubModule subModule;
+
+    @ManyToOne
     @JoinColumns({
             @JoinColumn(name = "profile_id", referencedColumnName = "profile_id", insertable = false, updatable = false),
             @JoinColumn(name = "module_id", referencedColumnName = "module_id", insertable = false, updatable = false)

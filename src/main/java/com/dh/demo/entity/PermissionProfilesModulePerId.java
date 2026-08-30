@@ -19,8 +19,8 @@ public class PermissionProfilesModulePerId implements Serializable {
     @Column(name = "module_id")
     private Long moduleId;
 
-    @Column(name = "sub_module_name")
-    private String subModuleName;
+    @Column(name = "submodule_id")
+    private Long submoduleId;
 
     @Column(name = "code")
     private Character code;
