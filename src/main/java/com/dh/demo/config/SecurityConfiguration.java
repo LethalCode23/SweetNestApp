@@ -41,6 +41,7 @@ public class SecurityConfiguration {
                                 .requestMatchers("/api/auth/**").permitAll()
                                 .requestMatchers("/h2-console/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/hotel/findByHotel/**").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/hotel/findDetailById/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/hotel-images/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/swagger-ui/**").permitAll()
                                 .requestMatchers(HttpMethod.GET,"/v3/api-docs/**").permitAll()

@@ -1,6 +1,7 @@
-package com.dh.demo.dto;
+package com.dh.demo.dto.request;
 
-import com.dh.demo.entity.Role;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,11 +11,17 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserDto {
+public class UpdateUserRequest {
 
-    private Long userSec;
+    @NotBlank
     private String firstName;
+
+    @NotBlank
     private String lastName;
+
+    @NotBlank
+    @Email
     private String email;
-    private ProfileDto profile;
+
+    private Long profileId;
 }

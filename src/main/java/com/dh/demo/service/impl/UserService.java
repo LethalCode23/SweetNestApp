@@ -5,17 +5,20 @@ import com.dh.demo.authentication.RegisterRequest;
 import com.dh.demo.config.JwtService;
 import com.dh.demo.dto.AuthDto;
 import com.dh.demo.dto.ProfileDto;
+import com.dh.demo.dto.RegistrationEmailDTO;
 import com.dh.demo.dto.UserDto;
+import com.dh.demo.dto.request.UpdateUserRequest;
 import com.dh.demo.dto.response.LoginResponseDto;
 import com.dh.demo.dto.response.RegisterResponseDto;
 import com.dh.demo.entity.Profile;
 import com.dh.demo.entity.User;
 import com.dh.demo.repository.IUserRepository;
-import com.dh.demo.repository.IProfileRepository;
+import com.dh.demo.service.IEmailService;
 import com.dh.demo.service.IProfileService;
 import com.dh.demo.service.IUserService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -34,6 +37,10 @@ public class UserService implements IUserService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final IProfileService profileService;
+    private final IEmailService emailService;
+
+    @Value("${app.frontend.login-url}")
+    private String loginUrl;
 
     @Override
     public RegisterResponseDto save(RegisterRequest registerRequest) {
@@ -66,12 +73,21 @@ public class UserService implements IUserService {
                 .profile(profileSave)
                 .build();
 
-        repository.save(user);
+        User savedUser = repository.save(user);
+
+        emailService.sendRegistrationConfirmation(
+                RegistrationEmailDTO.builder()
+                        .to(savedUser.getUserEmail())
+                        .username(savedUser.getUserFirstName() + " " + savedUser.getUserLastName())
+                        .loginUrl(loginUrl)
+                        .build()
+        );
 
         UserDto userDto = new UserDto(
-                user.getUserFirstName(),
-                user.getUserLastName(),
-                user.getUserEmail(),
+                savedUser.getUserSec(),
+                savedUser.getUserFirstName(),
+                savedUser.getUserLastName(),
+                savedUser.getUserEmail(),
                 mapToDto(profileSave)
         );
 
@@ -125,12 +141,14 @@ public class UserService implements IUserService {
 
     @Override
     public Optional<UserDto> findByEmail(String userEmail) {
+
         return repository.findByUserEmail(userEmail)
                 .map(this::mapToUserDto);
     }
 
     @Override
     public List<UserDto> findAll() {
+
         return repository.findAll()
                 .stream()
                 .map(this::mapToUserDto)
@@ -147,9 +165,43 @@ public class UserService implements IUserService {
         repository.deleteById(userSec);
     }
 
+    @Override
+    public Optional<UserDto> findById(Long userSec) {
+        return repository.findById(userSec)
+                .map(this::mapToUserDto);
+    }
+
+    @Override
+    public UserDto update(Long userSec, UpdateUserRequest request) {
+
+        User user = repository.findById(userSec)
+                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userSec));
+
+        ProfileDto profileSearched = profileService.findById(request.getProfileId())
+                .orElseThrow(() -> new IllegalArgumentException("Profile no found"));
+
+        Profile profile = new Profile( // pendiente ajustar
+                profileSearched.getProId(),
+                profileSearched.getProName(),
+                profileSearched.getProState(),
+                profileSearched.getIsDefault(),
+                profileSearched.getHasControlAccess()
+        );
+
+        user.setUserFirstName(request.getFirstName());
+        user.setUserLastName(request.getLastName());
+        user.setUserEmail(request.getEmail());
+        user.setProfile(profile);
+
+        repository.save(user);
+
+        return mapToUserDto(user);
+    }
+
     private UserDto mapToUserDto(User user) {
 
         UserDto dto = UserDto.builder()
+                .userSec(user.getUserSec())
                 .firstName(user.getUserFirstName())
                 .lastName(user.getUserLastName())
                 .email(user.getUserEmail())

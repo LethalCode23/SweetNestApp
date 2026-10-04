@@ -1,11 +1,19 @@
 package com.dh.demo.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "hotel")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class Hotel {
 
     @Id
@@ -43,79 +51,11 @@ public class Hotel {
     )
     private List<Category> Categories = new ArrayList<>();
 
-    public Hotel() {
-
-    }
-
-    public Integer getHotSec() {
-        return hotSec;
-    }
-
-    public void setHotSec(Integer hotSec) {
-        this.hotSec = hotSec;
-    }
-
-    public String getHotName() {
-        return hotName;
-    }
-
-    public void setHotName(String hotName) {
-        this.hotName = hotName;
-    }
-
-    public String getHotDescription() {
-        return hotDescription;
-    }
-
-    public void setHotDescription(String hotDescription) {
-        this.hotDescription = hotDescription;
-    }
-
-    public String getHotAddress() {
-        return hotAddress;
-    }
-
-    public void setHotAddress(String hotAddress) {
-        this.hotAddress = hotAddress;
-    }
-
-    public int getHotCost() {
-        return hotCost;
-    }
-
-    public void setHotCost(int hotCost) {
-        this.hotCost = hotCost;
-    }
-
-    public Character getHotState() {
-        return hotState;
-    }
-
-    public City getCity() {
-        return city;
-    }
-
-    public void setCity(City city) {
-        this.city = city;
-    }
-
-    public void setHotState(Character hotState) {
-        this.hotState = hotState;
-    }
-
-    public List<HotelImages> getHotelImages() {
-        return HotelImages;
-    }
-
-    public void setHotelImages(List<HotelImages> hotelImages) {
-        HotelImages = hotelImages;
-    }
-
-    public List<Category> getCategories() {
-        return Categories;
-    }
-
-    public void setCategories(List<Category> categories) {
-        this.Categories = categories;
-    }
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinTable(
+            name = "hotel_feature",
+            joinColumns = @JoinColumn(name = "hotSec_fk", referencedColumnName = "hotSec"), // FK de Hotel
+            inverseJoinColumns = @JoinColumn(name = "FeaSec_fk", referencedColumnName = "FeaSec") // FK de Category
+    )
+    private List<Feature> Features = new ArrayList<>();
 }

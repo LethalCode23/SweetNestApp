@@ -9,10 +9,9 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ActionDto {
+public class RegistrationEmailDTO {
 
-    private Character code;
-    private String name;
-    private String description;
-    private Boolean allowed;
+    private String to;
+    private String username;
+    private String loginUrl;
 }

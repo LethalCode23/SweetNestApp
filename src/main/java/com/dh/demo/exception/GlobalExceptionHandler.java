@@ -38,11 +38,21 @@ public class GlobalExceptionHandler {
         return buildError("Usuario no encontrado", HttpStatus.NOT_FOUND, ApiResponseCode.USER_NOT_FOUND);
     }
 
+    @ExceptionHandler(HotelNotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleHotelNotFound(HotelNotFoundException ex) {
+        return buildError(ex.getMessage(), HttpStatus.NOT_FOUND, ApiResponseCode.HOTEL_NOT_FOUND);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGeneric(Exception ex) {
 
         log.error("Error creating user", ex);
         return buildError("Error interno del servidor", HttpStatus.INTERNAL_SERVER_ERROR, ApiResponseCode.INTERNAL_ERROR);
+    }
+
+    @ExceptionHandler(EmailSendingException.class)
+    public ResponseEntity<ApiResponse<Void>> handleEmailSending(EmailSendingException ex) {
+        return buildError(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR, ApiResponseCode.EMAIL_SENDING_ERROR);
     }
 
     private ResponseEntity<ApiResponse<Void>> buildError(String message, HttpStatus status, ApiResponseCode code) {

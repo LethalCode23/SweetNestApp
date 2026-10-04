@@ -31,6 +31,9 @@ public class PermissionProfilesModulePer {
     @Column(name = "action_name")
     private String actionName;
 
+    @Column(name = "action_description")
+    private String actionDescription;
+
     @Column(name = "check_allowed")
     private Character check;
 }

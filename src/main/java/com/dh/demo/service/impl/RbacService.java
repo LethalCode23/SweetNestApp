@@ -2,6 +2,10 @@ package com.dh.demo.service.impl;
 
 import com.dh.demo.config.i18n.MessageService;
 import com.dh.demo.dto.*;
+import com.dh.demo.entity.Module;
+import com.dh.demo.entity.PermissionProfiles;
+import com.dh.demo.entity.PermissionProfilesId;
+import com.dh.demo.entity.Profile;
 import com.dh.demo.mapper.ModuleMapper;
 import com.dh.demo.mapper.ProfileMapper;
 import com.dh.demo.repository.IPermissionProfilesRepository;
@@ -65,6 +69,7 @@ public class RbacService implements IRbacService {
                         ActionDto.builder()
                                 .code(row.getActionCode())
                                 .name(row.getActionName())
+                                .description(row.getDescription())
                                 .allowed(toBoolean(row.getCheckAllowed()))
                                 .build()
                 );
@@ -78,7 +83,7 @@ public class RbacService implements IRbacService {
     @Transactional
     public void updateEntryAllowed(Long profileId, Long moduleId, Boolean entryAllowed) {
 
-        /*Character value = entryAllowed ? 'S' : 'N';
+        Character value = entryAllowed ? 'S' : 'N';
 
         PermissionProfilesId id = new PermissionProfilesId(profileId, moduleId);
 
@@ -105,16 +110,6 @@ public class RbacService implements IRbacService {
                     .build();
 
             permissionProfilesRepository.save(pp);
-        }*/
-
-        Character value = entryAllowed ? 'S' : 'N';
-        int updatedRows = permissionProfilesRepository.updateEntryAllowed(profileId, moduleId, value);
-
-        if (updatedRows == 0) {
-
-            throw new EntityNotFoundException(
-                    "No existe permiso para el perfil " + profileId + " en el módulo " + moduleId
-            );
         }
     }
 

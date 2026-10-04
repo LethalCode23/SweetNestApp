@@ -2,6 +2,8 @@ package com.dh.demo.controller;
 
 import com.dh.demo.dto.HotelDto;
 import com.dh.demo.dto.HotelFilterDto;
+import com.dh.demo.dto.HotelResponseDto;
+import com.dh.demo.dto.response.ApiResponse;
 import com.dh.demo.service.IHotelService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -59,5 +61,15 @@ public class HotelController {
 
         Pageable pageable = PageRequest.of(page, size);
         return ResponseEntity.ok(service.findByHotel(hotelFilterDto, pageable));
+    }
+
+    @GetMapping("/findDetailById/{id}")
+    public ResponseEntity<ApiResponse<HotelResponseDto>> findDetailById(@PathVariable Integer id) {
+
+        HotelResponseDto hotel = service.findDetailById(id);
+
+        return ResponseEntity.ok(
+                ApiResponse.success("Hotel Success", hotel)
+        );
     }
 }

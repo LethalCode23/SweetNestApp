@@ -1,13 +1,13 @@
 package com.dh.demo.controller;
 
-import com.dh.demo.authentication.LoginRequest;
-import com.dh.demo.authentication.RegisterRequest;
+import com.dh.demo.config.i18n.MessageService;
 import com.dh.demo.dto.UserDto;
-import com.dh.demo.dto.response.LoginResponseDto;
+import com.dh.demo.dto.request.UpdateUserRequest;
+import com.dh.demo.dto.response.ApiResponse;
 import com.dh.demo.service.IUserService;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -18,34 +18,74 @@ import java.util.List;
 public class UserController {
 
     private final IUserService userService;
+    private final MessageService messageService;
 
-    @PostMapping("/register")
-    public ResponseEntity<Void> register(@Valid @RequestBody RegisterRequest registerRequest) {
-        userService.save(registerRequest);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
-    }
+    @GetMapping("/all")
+    public ResponseEntity<ApiResponse<List<UserDto>>> findAll() {
 
-    @PostMapping("/login")
-    public ResponseEntity<LoginResponseDto> login(@Valid @RequestBody LoginRequest loginRequest) {
-        LoginResponseDto response = userService.login(loginRequest);
+        ApiResponse<List<UserDto>> response = ApiResponse.success(
+                messageService.getMessage("user.found.all"),
+                userService.findAll()
+        );
+
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/all")
-    public ResponseEntity<List<UserDto>> findAll() {
-        return ResponseEntity.ok(userService.findAll());
+    @GetMapping("/{userSec}")
+    public ResponseEntity<ApiResponse<UserDto>> findById(@PathVariable Long userSec) {
+
+        UserDto userDto = userService.findById(userSec)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        messageService.getMessage("user.no.found")));
+
+        ApiResponse<UserDto> response = ApiResponse.success(
+                messageService.getMessage("user.found"),
+                userDto
+        );
+
+        return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/{email}")
-    public ResponseEntity<UserDto> findByEmail(@PathVariable String email) {
-        return userService.findByEmail(email)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+    @GetMapping("/findByEmail/{email}")
+    public ResponseEntity<ApiResponse<UserDto>> findByEmail(@PathVariable String email) {
+
+        UserDto userDto = userService.findByEmail(email)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        messageService.getMessage("user.no.found")));
+
+        ApiResponse<UserDto> response = ApiResponse.success(
+                messageService.getMessage("user.found"),
+                userDto
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/{userSec}")
+    public ResponseEntity<ApiResponse<UserDto>> update(
+            @PathVariable Long userSec,
+            @Valid @RequestBody UpdateUserRequest request) {
+
+        UserDto updated = userService.update(userSec, request);
+
+        ApiResponse<UserDto> response = ApiResponse.success(
+                messageService.getMessage("user.updated"),
+                updated
+        );
+
+        return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{userSec}")
-    public ResponseEntity<Void> delete(@PathVariable Long userSec) {
+    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long userSec) {
+
         userService.delete(userSec);
-        return ResponseEntity.noContent().build();
+
+        ApiResponse<Void> response = ApiResponse.success(
+                messageService.getMessage("user.deleted"),
+                null
+        );
+
+        return ResponseEntity.ok(response);
     }
 }

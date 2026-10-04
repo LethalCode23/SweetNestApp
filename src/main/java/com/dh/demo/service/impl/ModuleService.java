@@ -32,7 +32,8 @@ public class ModuleService implements IModuleService {
 
     @Override
     public Optional<ModuleDto> findById(Long id) {
-        return Optional.empty();
+        return moduleRepository.findById(id)
+                .map(this::mapToDto);
     }
 
     @Override
