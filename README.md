@@ -101,7 +101,22 @@ src/main/java/com/dh/demo/
 ├── repository/       # Repositorios Spring Data JPA
 ├── service/          # Lógica de negocio (interfaces + impl/)
 └── validator/        # Validaciones de negocio
+docs/
+└── RBAC.md           # Arquitectura de permisos y datos semilla
 ```
+
+## Seguridad y permisos (RBAC)
+
+El sistema usa **control de acceso basado en roles (RBAC)**: cada usuario tiene un perfil (Administrador o Usuario) y cada perfil recibe permisos sobre una jerarquía de **módulos → submódulos → acciones (R/C/U/D)**. Al hacer login, el frontend consulta `GET /api/profiles/{profileId}/modules` y renderiza solo el menú y las acciones permitidas.
+
+```
+User → Profile (rol) → PermissionProfiles (módulo) → PermissionProfilesModule (submódulo) → PermissionProfilesModulePer (acción)
+```
+
+- **[docs/RBAC.md](./docs/RBAC.md)** — arquitectura completa, entidades, flujo de autorización y detalle de los datos semilla (`DataInitializer`).
+- **[API.md](./API.md#13-rbaccontroller--apiprofiles)** — endpoints RBAC con ejemplos cURL.
+
+Al arrancar, `DataInitializer` puebla la BD en memoria con perfiles, módulos, permisos, maestras geográficas y hoteles de ejemplo (solo si la BD está vacía). Usuarios de prueba: `admin@sweetnest.com` / `Admin123` y `usuario@sweetnest.com` / `Usuario123`.
 
 ## Pruebas
 

@@ -1377,6 +1377,8 @@ curl -X DELETE "http://localhost:8080/api/profile/1" \
 
 Consulta de permisos por perfil y actualización del flag de acceso a módulo. / Profile permission queries and module entry-allowed update. Requiere autenticación.
 
+> **Ver también / See also:** arquitectura completa de permisos (jerarquía perfil → módulo → submódulo → acción) en **[docs/RBAC.md](docs/RBAC.md)**.
+
 ### Resumen / Summary
 
 | Método | Ruta | Propósito |
@@ -1659,16 +1661,19 @@ curl -X POST "http://localhost:8080/api/emails/send-simple-email" \
 
 La clase `DataInitializer` carga las maestras al arrancar, solo si la base de datos está vacía (`paisRepository.count() == 0`). / The `DataInitializer` class loads master data on startup, only when the database is empty.
 
+> **Ver también / See also:** arquitectura de permisos RBAC y detalle de datos semilla en **[docs/RBAC.md](docs/RBAC.md)**.
+
 | Maestra / Master data | Registros cargados / Records loaded |
 | --- | --- |
 | Perfiles / Profiles | 2 |
 | Usuarios / Users | 2 |
 | Módulos / Modules | 5 |
-| Submódulos / SubModules | 8 |
+| Submódulos / SubModules | 9 |
 | Países / Countries | 3 |
 | Departamentos / Departments | 9 |
-| Ciudades / Cities | 17 |
+| Ciudades / Cities | 10 |
 | Categorías / Categories | 3 |
+| Características / Features | 3 |
 | Hoteles / Hotels | 10 |
 
 Usuarios por defecto / Default users:
