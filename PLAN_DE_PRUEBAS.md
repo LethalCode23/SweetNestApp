@@ -66,6 +66,19 @@ Este documento define y ejecuta las pruebas manuales del backend Spring Boot. Co
 | TC-BE-16 | Detalle completo sin token (`findDetailById/1`, público) | `200 OK` con `city`, `imageUrls`, `categories` | ✅ Pass |
 | TC-BE-17 | Detalle de hotel inexistente (id `9999`) | `404 Not Found` | ✅ Pass |
 | TC-BE-18 | Crear hotel con categorías (`POST /save`) | `201 Created` | ✅ Pass |
+| TC-BE-18a | Sugerencias sin token y sin `q` (`GET /suggestions`) | `200 OK` con `[]` | ✅ Pass |
+| TC-BE-18b | Sugerencias con `q="  b  "` (menos de 2 caracteres tras trim) | `200 OK` con `[]` | ✅ Pass |
+| TC-BE-18c | Sugerencias con `q="  BOGO "` (parcial, mayúsculas) | Ciudad `Bogotá` primero, luego hotel `Hostal Andino Bogotá` | ✅ Pass |
+| TC-BE-18d | Sugerencias sin coincidencias (`q="zzzz"`) | `200 OK` con `[]` | ✅ Pass |
+| TC-BE-18e | Sugerencias con término frecuente (`q="ot"`) | Máximo 10 resultados | ✅ Pass |
+| TC-BE-18f | Hotel inactivo (`hotState` ≠ `'A'`) | No aparece en sugerencias | ✅ Pass |
+| TC-BE-18g | Días no disponibles sin token (`GET /{hotSec}/unavailable-dates`) | `200 OK`, rango default hoy → hoy + 6 meses | ✅ Pass |
+| TC-BE-18h | Casa con reserva `CONFIRMED` 10→12 | Devuelve 10 y 11; el 12 (salida) queda libre | ✅ Pass |
+| TC-BE-18i | Reservas `PENDING` / `CANCELLED` / `COMPLETED` | Solo `PENDING` bloquea | ✅ Pass |
+| TC-BE-18j | Reserva que empieza antes de `from` | Se recorta al rango pedido | ✅ Pass |
+| TC-BE-18k | Hotel con 2 unidades, reservas solapadas parcialmente | Solo se bloquean los días con ambas ocupadas | ✅ Pass |
+| TC-BE-18l | Reserva en unidad inactiva | No cuenta; `totalUnits` excluye la inactiva | ✅ Pass |
+| TC-BE-18m | Hotel inexistente / `to <= from` / rango > 366 días | `404` / `400` / `400` | ✅ Pass |
 
 ### 3.5 Imágenes de hotel (HotelImagesController)
 

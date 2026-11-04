@@ -25,6 +25,8 @@
 - [14. UserController — `/api/users`](#14-usercontroller--apiusers)
 - [15. EmailController — `/api/emails`](#15-emailcontroller--apiemails)
 - [16. Datos de inicialización / Seed Data](#16-datos-de-inicialización--seed-data)
+- [17. Reservas y anfitriones — `/api/reservations`](#17-reservas-y-anfitriones--apireservations)
+- [18. Favoritos / Favorites — `/api/favorites`](#18-favoritos--favorites--apifavorites)
 - [Resumen general / Summary](#resumen-general--summary)
 
 ---
@@ -123,6 +125,8 @@ El servicio usa **JWT (Bearer token)**. Para acceder a los recursos protegidos:
 | `/api/auth/**` | POST |
 | `/api/hotel/findByHotel/**` | GET |
 | `/api/hotel/findDetailById/**` | GET |
+| `/api/hotel/suggestions` | GET |
+| `/api/hotel/{hotSec}/unavailable-dates` | GET |
 | `/hotel-images/**` | GET |
 | `/swagger-ui/**`, `/swagger-ui.html`, `/v3/api-docs/**` | GET |
 | `/h2-console/**` | — |
@@ -762,6 +766,8 @@ Gestión de hoteles: CRUD, listado paginado y búsqueda por filtros. / Hotel man
 | GET | `/api/hotel/findById/{id}` | Buscar por ID |
 | GET | `/api/hotel/findByHotel?page=&size=&citName=&minCost=&maxCost=&categoryIds=` | Buscar con filtros (público) |
 | GET | `/api/hotel/findDetailById/{id}` | Detalle completo (público) |
+| GET | `/api/hotel/suggestions?q=` | Autocompletado: ciudades + hoteles, máx. 10 (público) |
+| GET | `/api/hotel/{hotSec}/unavailable-dates?from=&to=` | Días sin unidades libres para el calendario (público) |
 
 **DTO (`HotelDto`):**
 
@@ -942,6 +948,76 @@ curl "http://localhost:8080/api/hotel/findDetailById/1"
 ```
 
 - **Errores:** `404` si no existe.
+
+### `GET /api/hotel/suggestions?q=` — *(público / public)*
+
+Autocompletado del campo de búsqueda: devuelve ciudades y hoteles **activos** cuyo nombre
+contiene `q` (parcial, sin distinguir mayúsculas). Ciudades primero, luego hoteles; **máximo 10**.
+/ Search-box autocomplete: active cities and hotels whose name contains `q`; cities first, max 10.
+
+- **Query param:** `q` (`String`, opcional). Se aplica `trim`; si falta o tiene menos de 2
+  caracteres → `200 []` (no consulta la BD). Nunca devuelve `400`.
+- **Uso en el front:** `type = "CITY"` → usar `name` como `citName` en `findByHotel`;
+  `type = "HOTEL"` → navegar al detalle con `id` (`findDetailById/{id}`).
+- **cURL (sin token, es público):**
+
+```bash
+curl "http://localhost:8080/api/hotel/suggestions?q=bogo"
+```
+
+- **Respuesta `200 OK`: `List<SearchSuggestionDto>`** (lista cruda, sin `ApiResponse`)
+
+```json
+[
+  { "type": "CITY",  "id": 1, "name": "Bogotá" },
+  { "type": "HOTEL", "id": 4, "name": "Hostal Andino Bogotá" }
+]
+```
+
+- Sin coincidencias → `[]`.
+
+### `GET /api/hotel/{hotSec}/unavailable-dates?from=&to=` — *(público / public)*
+
+Días del hotel en los que **ninguna unidad activa está libre**, para marcarlos en el
+calendario del frontend. Cuentan las reservas `PENDING` y `CONFIRMED`; `CANCELLED` y
+`COMPLETED` no bloquean. El día de salida queda libre. En alojamientos de una sola unidad
+(casa, apartamento) equivale a "días con reserva"; en hoteles multi-unidad un día solo se
+bloquea si todas las unidades están ocupadas. No expone datos de las reservas, solo fechas.
+/ Days with no free active unit (PENDING/CONFIRMED), for the frontend calendar.
+
+- **Path:** `hotSec` (id del hotel).
+- **Query params (opcionales, `yyyy-MM-dd`):** `from` (default hoy) · `to` exclusivo
+  (default `from + 6 meses`). Rango máximo 366 días.
+- **cURL (sin token, es público):**
+
+```bash
+curl "http://localhost:8080/api/hotel/5/unavailable-dates"
+curl "http://localhost:8080/api/hotel/5/unavailable-dates?from=2026-11-01&to=2027-01-01"
+```
+
+- **Respuesta `200 OK`: `ApiResponse<HotelUnavailableDatesResponse>`**
+
+```json
+{
+  "success": true,
+  "message": "Fechas no disponibles obtenidas",
+  "code": 0,
+  "data": {
+    "hotSec": 5,
+    "from": "2026-11-01",
+    "to": "2027-01-01",
+    "totalUnits": 1,
+    "unavailableDates": ["2026-11-11", "2026-11-12", "2026-11-13", "2026-11-14"]
+  }
+}
+```
+
+- `unavailableDates` viene ordenada; se puede pasar directo a `excludeDates` del datepicker.
+- Hotel sin unidades activas → `totalUnits: 0` y lista vacía.
+- **Errores:** `404` hotel inexistente · `400` (`INVALID_DATE_RANGE`) si `to <= from` o el
+  rango supera 366 días.
+- **Ojo:** no enviar `Authorization` con un token vencido (el filtro JWT falla con tokens
+  vencidos incluso en endpoints públicos; pendiente conocido).
 
 ---
 
@@ -1666,7 +1742,7 @@ La clase `DataInitializer` carga las maestras al arrancar, solo si la base de da
 | Maestra / Master data | Registros cargados / Records loaded |
 | --- | --- |
 | Perfiles / Profiles | 2 |
-| Usuarios / Users | 2 |
+| Usuarios / Users | 4 |
 | Módulos / Modules | 5 |
 | Submódulos / SubModules | 9 |
 | Países / Countries | 3 |
@@ -1682,6 +1758,112 @@ Usuarios por defecto / Default users:
 | --- | --- | --- |
 | `admin@sweetnest.com` | `Admin123` | Administrador |
 | `usuario@sweetnest.com` | `Usuario123` | Usuario |
+| `anfitrion@sweetnest.com` | `Anfitrion123` | Usuario — anfitrión (`userHost='S'`), host de 5 hoteles |
+| `anfitrion2@sweetnest.com` | `Anfitrion123` | Usuario — anfitrión (`userHost='S'`), host de 5 hoteles |
+
+---
+
+## 17. Reservas y anfitriones — `/api/reservations`
+
+> Fase 2 — anfitrión del hotel. Los endpoints de reservas, tipos y unidades de la
+> Fase 1 están listados en [docs/BITACORA.md](docs/BITACORA.md).
+
+### Resumen / Summary
+
+| Método | Ruta | Acceso / Access | Uso / Use |
+| --- | --- | --- | --- |
+| GET | `/api/reservations/incoming` | Sesión | Bandeja del anfitrión: reservas de **sus** hoteles |
+| PUT | `/api/users/{userSec}` | Admin (campo `host`) | Marcar (`"S"`) o desmarcar (`"N"`) anfitrión |
+| PUT | `/api/hotel/update/{id}` | Admin | Asignar anfitrión con `hostId` |
+| PATCH | `/api/reservations/{id}/confirm` | Admin **o anfitrión del hotel** | `PENDING` → `CONFIRMED` (antes: solo admin) |
+
+### `GET /api/reservations/incoming`
+
+Devuelve las reservas de los hoteles donde el usuario del token es anfitrión
+(`hotels.hotUserSec`). Si no es anfitrión de ningún hotel → `200` con lista vacía.
+Query params: `status` (`PENDING\|CONFIRMED\|CANCELLED\|COMPLETED`, opcional), `page`, `size`.
+
+```bash
+curl -s -H "Authorization: Bearer $TOKEN" \
+  "http://localhost:8080/api/reservations/incoming?status=PENDING&page=0&size=10"
+```
+
+### Marcar un usuario como anfitrión
+
+Solo administradores (otro usuario → `403` código `1018`). `host` acepta `"S"` o `"N"`
+(otro valor → `400` código `1001`). El campo es opcional: si no va, no cambia.
+
+```bash
+curl -s -X PUT -H "Authorization: Bearer $ADMIN_TOKEN" -H "Content-Type: application/json" \
+  -d '{"firstName":"Juan","lastName":"Perez","email":"usuario@sweetnest.com","profileId":2,"host":"S"}' \
+  http://localhost:8080/api/users/2
+```
+
+### Asignar el anfitrión de un hotel
+
+`hostId` va en el `PUT /api/hotel/update/{id}` existente (opcional; sin él = no cambia).
+Si el usuario **no** está marcado con `userHost='S'` → `409` código `1020`;
+si `hostId` no existe → `404` código `1004`. El detalle del hotel expone `hostId`.
+
+```bash
+curl -s -X PUT -H "Authorization: Bearer $ADMIN_TOKEN" -H "Content-Type: application/json" \
+  -d '{"hotName":"Hotel Poblado Suite","hotDescription":"Boutique","hotAddress":"Cra 43A #9-12","hotCost":250000,"hotState":"A","hotCitSec":4,"typeId":1,"hostId":3}' \
+  http://localhost:8080/api/hotel/update/1
+```
+
+### Códigos nuevos / New codes
+
+| Código | HTTP | Cuándo / When |
+| --- | --- | --- |
+| `1019` `HOST_NOT_ASSIGNED` | 409 | Un no-admin confirma una reserva cuyo hotel no tiene anfitrión |
+| `1020` `USER_NOT_HOST` | 409 | `hostId` apunta a un usuario sin `userHost='S'` |
+
+---
+
+## 18. Favoritos / Favorites — `/api/favorites`
+
+> Un favorito es **usuario + hotel** (único). Todo exige sesión; el usuario sale del token.
+> A favorite is a unique **user + hotel** pair. Every endpoint requires a token; the user comes from it.
+> Las respuestas usan `ApiResponse` (datos en `.data`). / Responses use the `ApiResponse` envelope.
+
+### Resumen / Summary
+
+| Método | Ruta | Uso / Use |
+| --- | --- | --- |
+| GET | `/api/favorites?page=0&size=12` | Página de favoritos del usuario (más recientes primero) / User's favorites page (newest first) |
+| GET | `/api/favorites/ids` | Solo los `hotSec` guardados / Only the saved `hotSec` ids |
+| PUT | `/api/favorites/{hotSec}` | Guardar (idempotente) / Save (idempotent) |
+| DELETE | `/api/favorites/{hotSec}` | Quitar (idempotente, `200` aunque no existiera) / Remove (idempotent) |
+
+Errores / Errors: sin token → `401` · hotel inexistente → `404` código `1007` ·
+hotel inactivo (`hotState != 'A'`) → `409` código `1016`.
+Guardar dos veces el mismo hotel devuelve el favorito existente (no hay duplicados: `UNIQUE (favUserSec, favHotSec)`).
+
+```bash
+curl -s -X PUT    -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/favorites/1
+curl -s           -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/favorites/ids
+curl -s           -H "Authorization: Bearer $TOKEN" "http://localhost:8080/api/favorites?page=0&size=12"
+curl -s -X DELETE -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/favorites/1
+```
+
+Respuesta de `PUT` / `PUT` response:
+
+```json
+{
+  "success": true,
+  "message": "Hotel guardado en favoritos",
+  "data": {
+    "favSec": 3,
+    "createdAt": "2026-11-03T20:57:02",
+    "hotel": { "hotSec": 1, "hotName": "...", "hotCost": 250000, "hotelImagesUrl": [], "categories": [] }
+  }
+}
+```
+
+`data.hotel` tiene el mismo formato que las cards de `GET /api/hotel/findByHotel`. /
+`data.hotel` uses the same shape as the `findByHotel` search cards.
+
+Seed: `usuario@sweetnest.com` arranca con 2 favoritos. / starts with 2 favorites.
 
 ---
 
@@ -1694,7 +1876,7 @@ Usuarios por defecto / Default users:
 | CityController | `/api/city` | POST `/save`, GET `/findById/{id}`, GET `/all`, PUT `/update/{id}`, DELETE `/delete/{id}` |
 | DepartmentController | `/api/department` | POST `/save`, GET `/all`, GET `/findById/{id}`, PUT `/update/{id}`, DELETE `/delete/{id}` |
 | FeatureController | `/api/feature` | POST `/`, GET `/all`, GET `/{id}`, PUT `/{id}`, DELETE `/{id}` |
-| HotelController | `/api/hotel` | POST `/save`, PUT `/update/{id}`, GET `/all`, DELETE `/delete/{id}`, GET `/findById/{id}`, GET `/findByHotel`, GET `/findDetailById/{id}` |
+| HotelController | `/api/hotel` | POST `/save`, PUT `/update/{id}`, GET `/all`, DELETE `/delete/{id}`, GET `/findById/{id}`, GET `/findByHotel`, GET `/findDetailById/{id}`, GET `/suggestions`, GET `/{hotSec}/unavailable-dates` |
 | HotelImagesController | `/api/hotel-images` | POST `/save`, DELETE `/delete/{hotImgSec}` |
 | ModuleController | `/api/module` | POST `/save` |
 | PaisController | `/api/country` | POST `/save`, GET `/all`, GET `/findById/{id}`, PUT `/update/{id}`, DELETE `/delete/{id}` |
@@ -1702,5 +1884,7 @@ Usuarios por defecto / Default users:
 | PermissionProfilesModulePerController | `/api/PermissionProModPer` | PATCH `/{profileId}/modules/{moduleId}/submodules/{subModuleId}/actions/{code}` |
 | ProfileController | `/api/profile` | POST `/save`, PUT `/{id}`, GET `/{id}`, GET `/all`, DELETE `/{id}` |
 | RbacController | `/api/profiles` | GET `/{profileId}/modules`, PATCH `/{profileId}/modules/{moduleId}/entry-allowed` |
+| ReservationController | `/api/reservations` | POST `/`, GET `/me`, GET `/incoming`, GET `/`, PATCH `/{id}/confirm`, PATCH `/{id}/cancel` |
+| FavoriteController | `/api/favorites` | GET `/`, GET `/ids`, PUT `/{hotSec}`, DELETE `/{hotSec}` |
 | UserController | `/api/users` | GET `/all`, GET `/{userSec}`, GET `/findByEmail/{email}`, PUT `/{userSec}`, DELETE `/{userSec}` |
 | EmailController | `/api/emails` | POST `/send-simple-email` |
