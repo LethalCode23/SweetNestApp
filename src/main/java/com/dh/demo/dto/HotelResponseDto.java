@@ -17,6 +17,12 @@ public class HotelResponseDto {
     private int cost;
     private Character state;
     private CityDto city;
+    private Integer typeId;
+    private String typeName;
+    /** 'S' la reserva requiere confirmacion, 'N' reserva inmediata. */
+    private Character confirmReq;
+    /** Anfitrion del hotel (users.userSec). Null = sin asignar. */
+    private Long hostId;
     private List<String> imageUrls;
     private List<CategoryDto> categories;
     private List<FeatureDto> features;

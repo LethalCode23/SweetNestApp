@@ -4,7 +4,11 @@ import com.dh.demo.dto.HotelDto;
 import com.dh.demo.dto.HotelFilterDto;
 import com.dh.demo.dto.HotelResponseDto;
 import com.dh.demo.dto.response.ApiResponse;
+import com.dh.demo.dto.response.HotelUnavailableDatesResponse;
+import com.dh.demo.dto.response.SearchSuggestionDto;
 import com.dh.demo.service.IHotelService;
+import com.dh.demo.service.IReservationService;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -12,14 +16,19 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.util.List;
+
 @RestController
 @RequestMapping("api/hotel")
 public class HotelController {
 
     private final IHotelService service;
+    private final IReservationService reservationService;
 
-    public HotelController(IHotelService service) {
+    public HotelController(IHotelService service, IReservationService reservationService) {
         this.service = service;
+        this.reservationService = reservationService;
     }
 
     @PostMapping("/save") // insert record
@@ -63,6 +72,12 @@ public class HotelController {
         return ResponseEntity.ok(service.findByHotel(hotelFilterDto, pageable));
     }
 
+    /** Autocompletado del buscador: ciudades + hoteles (max 10). q < 2 chars -> []. */
+    @GetMapping("/suggestions")
+    public ResponseEntity<List<SearchSuggestionDto>> suggestions(@RequestParam(required = false) String q) {
+        return ResponseEntity.ok(service.getSuggestions(q));
+    }
+
     @GetMapping("/findDetailById/{id}")
     public ResponseEntity<ApiResponse<HotelResponseDto>> findDetailById(@PathVariable Integer id) {
 
@@ -71,5 +86,19 @@ public class HotelController {
         return ResponseEntity.ok(
                 ApiResponse.success("Hotel Success", hotel)
         );
+    }
+
+    /**
+     * Publico: dias sin ninguna unidad libre (reservas PENDING / CONFIRMED) para el
+     * calendario del frontend. from default hoy, to (exclusivo) default from + 6 meses.
+     */
+    @GetMapping("/{hotSec}/unavailable-dates")
+    public ResponseEntity<ApiResponse<HotelUnavailableDatesResponse>> unavailableDates(
+            @PathVariable Integer hotSec,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+
+        return ResponseEntity.ok(ApiResponse.success("Fechas no disponibles obtenidas",
+                reservationService.findUnavailableDates(hotSec, from, to)));
     }
 }

@@ -1,9 +1,7 @@
 package com.dh.demo.dto;
 
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
-
 import java.util.List;
 
 @Getter
@@ -18,6 +16,12 @@ public class HotelDto {
     private Character hotState;
     private Integer hotCitSec;
     private String hotCitName;
+    private Integer typeId;
+    private String typeName;
+    /** Anfitrion del hotel (users.userSec). Null = sin asignar. */
+    private Long hostId;
+    /** 'S' la reserva requiere confirmacion, 'N' reserva inmediata. */
+    private Character hotConfirmReq;
     private List<HotelImagesDto> hotelImagesUrl;
     private List<Integer> categoryIds;
     private List<Integer> featureIds;
