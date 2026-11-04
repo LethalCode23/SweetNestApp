@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -43,6 +44,24 @@ public class User implements UserDetails {
     @ManyToOne
     @JoinColumn(name = "profile_id", nullable = false)
     private Profile profile;
+
+    /** Sin cascade: borrar un usuario con reservas falla y se responde 409. */
+    @Builder.Default
+    @OneToMany(mappedBy = "user")
+    private List<Reservation> reservations = new ArrayList<>();
+
+    /**
+     * Marca de anfitrion (Fase 2): 'S' puede ser host de un hotel, 'N' no.
+     * La asignacion concreta a un hotel vive en hotels.hotUserSec.
+     */
+    @Builder.Default
+    @Column(name = "userHost", nullable = false, length = 1)
+    private Character userHost = 'N';
+
+    /** Hoteles donde este usuario es anfitrion (hotels.hotUserSec). */
+    @Builder.Default
+    @OneToMany(mappedBy = "host")
+    private List<Hotel> hotelsHosted = new ArrayList<>();
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

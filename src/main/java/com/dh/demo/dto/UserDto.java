@@ -17,4 +17,6 @@ public class UserDto {
     private String lastName;
     private String email;
     private ProfileDto profile;
+    /** Marca de anfitrion: 'S' o 'N'. */
+    private String host;
 }

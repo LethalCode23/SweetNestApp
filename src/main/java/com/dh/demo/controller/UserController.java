@@ -4,11 +4,14 @@ import com.dh.demo.config.i18n.MessageService;
 import com.dh.demo.dto.UserDto;
 import com.dh.demo.dto.request.UpdateUserRequest;
 import com.dh.demo.dto.response.ApiResponse;
+import com.dh.demo.exception.ForbiddenOperationException;
 import com.dh.demo.service.IUserService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -64,7 +67,13 @@ public class UserController {
     @PutMapping("/{userSec}")
     public ResponseEntity<ApiResponse<UserDto>> update(
             @PathVariable Long userSec,
-            @Valid @RequestBody UpdateUserRequest request) {
+            @Valid @RequestBody UpdateUserRequest request,
+            @AuthenticationPrincipal UserDetails principal) {
+
+        // Cambiar la marca de anfitrion (host) es solo de administrador (Fase 2).
+        if (request.getHost() != null) {
+            assertIsAdmin(principal);
+        }
 
         UserDto updated = userService.update(userSec, request);
 
@@ -74,6 +83,21 @@ public class UserController {
         );
 
         return ResponseEntity.ok(response);
+    }
+
+    /** El request debe venir de un administrador (profile.hasControlAccess = 'S'). */
+    private void assertIsAdmin(UserDetails principal) {
+
+        UserDto requester = userService.findByEmail(principal.getUsername())
+                .orElseThrow(() -> new ForbiddenOperationException("No se pudo identificar al usuario"));
+
+        boolean isAdmin = requester.getProfile() != null
+                && requester.getProfile().getHasControlAccess() != null
+                && requester.getProfile().getHasControlAccess() == 'S';
+
+        if (!isAdmin) {
+            throw new ForbiddenOperationException("Solo un administrador puede cambiar la marca de anfitrion");
+        }
     }
 
     @DeleteMapping("/{userSec}")

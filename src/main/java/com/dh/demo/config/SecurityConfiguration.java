@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -12,6 +13,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -42,14 +44,37 @@ public class SecurityConfiguration {
                                 .requestMatchers("/h2-console/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/hotel/findByHotel/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/hotel/findDetailById/**").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/hotel/findById/**").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/hotel/suggestions").permitAll()
+                                // calendario publico: dias sin unidades libres (solo fechas, sin datos de la reserva)
+                                .requestMatchers(HttpMethod.GET, "/api/hotel/*/unavailable-dates").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/category/all").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/hotel-types/**").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/hotel-unit/hotel/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/hotel-images/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/swagger-ui/**").permitAll()
                                 .requestMatchers(HttpMethod.GET,"/v3/api-docs/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/swagger-ui.html").permitAll()
+                                // catalogos: solo administrador
+                                .requestMatchers(HttpMethod.POST,   "/api/hotel-types/**").hasAuthority("Administrador")
+                                .requestMatchers(HttpMethod.PUT,    "/api/hotel-types/**").hasAuthority("Administrador")
+                                .requestMatchers(HttpMethod.DELETE, "/api/hotel-types/**").hasAuthority("Administrador")
+                                .requestMatchers(HttpMethod.POST,   "/api/hotel-unit/**").hasAuthority("Administrador")
+                                .requestMatchers(HttpMethod.PUT,    "/api/hotel-unit/**").hasAuthority("Administrador")
+                                .requestMatchers(HttpMethod.DELETE, "/api/hotel-unit/**").hasAuthority("Administrador")
+                                // reservas: listado global es de administrador. Confirmar lo valida
+                                // el service (admin o anfitrion del hotel, Fase 2); /incoming no necesita
+                                // linea: anyRequest().authenticated() ya pide token (A9).
+                                .requestMatchers(HttpMethod.GET, "/api/reservations").hasAuthority("Administrador")
+                                .requestMatchers(HttpMethod.PATCH, "/api/reservations/*/confirm").authenticated()
                                 .anyRequest().authenticated())
                 .sessionManagement(
                         session -> session
                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // Sin sesion -> 401 (el cliente debe loguearse). Con sesion pero sin
+                // permiso -> 403. Sin esto, Spring Security responde 403 en ambos casos.
+                .exceptionHandling(ex -> ex.authenticationEntryPoint(
+                        new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
