@@ -2,12 +2,15 @@ package com.dh.demo.config;
 
 import com.dh.demo.entity.*;
 import com.dh.demo.entity.Module;
+import com.dh.demo.entity.enums.ReservationStatus;
 import com.dh.demo.repository.*;
 import jakarta.transaction.Transactional;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,6 +25,10 @@ public class DataInitializer implements ApplicationRunner {
     private final CityRepository cityRepository;
     private final CategoryRepository categoryRepository;
     private final HotelRepository hotelRepository;
+    private final HotelTypeRepository hotelTypeRepository;
+    private final HotelUnitRepository hotelUnitRepository;
+    private final ReservationRepository reservationRepository;
+    private final FavoriteRepository favoriteRepository;
     private final IFeatureRepository featureRepository;
     private final IProfileRepository IProfileRepository;
     private final IModuleRepository moduleRepository;
@@ -37,6 +44,10 @@ public class DataInitializer implements ApplicationRunner {
                            CityRepository cityRepository,
                            CategoryRepository categoryRepository,
                            HotelRepository hotelRepository,
+                           HotelTypeRepository hotelTypeRepository,
+                           HotelUnitRepository hotelUnitRepository,
+                           ReservationRepository reservationRepository,
+                           FavoriteRepository favoriteRepository,
                            IProfileRepository IProfileRepository,
                            IModuleRepository moduleRepository,
                            ISubModuleRepository subModuleRepository,
@@ -52,6 +63,10 @@ public class DataInitializer implements ApplicationRunner {
         this.cityRepository = cityRepository;
         this.categoryRepository = categoryRepository;
         this.hotelRepository = hotelRepository;
+        this.hotelTypeRepository = hotelTypeRepository;
+        this.hotelUnitRepository = hotelUnitRepository;
+        this.reservationRepository = reservationRepository;
+        this.favoriteRepository = favoriteRepository;
         this.IProfileRepository = IProfileRepository;
         this.moduleRepository = moduleRepository;
         this.subModuleRepository = subModuleRepository;
@@ -81,8 +96,11 @@ public class DataInitializer implements ApplicationRunner {
 
         // 1. MÓDULO: Hoteles
         Module hotelsModule = createModule("Hoteles", "/hotels", "Gestión de Hoteles", 'A');
-        setupPermissionsForModule(adminProfile, hotelsModule,
-                List.of(new SubModuleSpec("Hoteles", "hotels")));
+        List<SubModuleSpec> hotelsSubmodules = List.of(
+                new SubModuleSpec("Hoteles", "hotels"),
+                new SubModuleSpec("Tipos", "type-hotels")
+        );
+        setupPermissionsForModule(adminProfile, hotelsModule, hotelsSubmodules);
 
         // 2. MÓDULO: Catálogos / Configuración
         Module catalogModule = createModule("Catálogos", "/catalog", "Gestión de Catálogos y Ubicaciones", 'A');
@@ -118,8 +136,20 @@ public class DataInitializer implements ApplicationRunner {
         setupPermissionsForModule(adminProfile, profilesModule, profilesSubmodules);
 
         // ── Users ────────────────────────────────────────────────────────────
-        createUser("Cristian", "Alexander", "admin@sweetnest.com", "Admin123", adminProfile);
-        createUser("Juan", "Pérez", "usuario@sweetnest.com", "Usuario123", userProfile);
+        User adminUser = createUser("Cristian", "Alexander", "admin@sweetnest.com", "Admin123", adminProfile);
+        User guestUser = createUser("Juan", "Pérez", "usuario@sweetnest.com", "Usuario123", userProfile);
+        // Anfitriones (Fase 2): userHost='S' para poder ser asignados como host de un hotel
+        User hostUserA = createUser("Laura", "Gómez", "anfitrion@sweetnest.com", "Anfitrion123", userProfile);
+        User hostUserB = createUser("Carlos", "Rivas", "anfitrion2@sweetnest.com", "Anfitrion123", userProfile);
+        hostUserA.setUserHost('S');
+        hostUserB.setUserHost('S');
+        userRepository.save(hostUserA);
+        userRepository.save(hostUserB);
+
+        // ── Hotel types (ANTES que los hoteles: hotTypSec es FK obligatoria) ─
+        HotelType typeHotel = createHotelType("Hotel", 'S');
+        HotelType typeCasa  = createHotelType("Casa", 'N');
+        HotelType typeDepto = createHotelType("Apartamento", 'N');
 
         // ── Countries ────────────────────────────────────────────────────────
         Pais colombia = new Pais();
@@ -181,76 +211,128 @@ public class DataInitializer implements ApplicationRunner {
         City ciudadDeMexico  = createCity("Ciudad de México", cdmx);
         City guadalajara     = createCity("Guadalajara", jalisco);
 
-        // ── Hotels ──────────────────────────────────────────────────────────
-        createHotel("Hotel Poblado Suite",
+        // ── Hotels (tipo + politica de reserva + su unidad) ─────────────────
+        Hotel poblado = createHotel("Hotel Poblado Suite",
                 "Un hermoso hotel boutique en el corazón de El Poblado.",
                 "Cra 43A #9-12, El Poblado",
-                250000, medellin,
-                List.of(boutique),
-                List.of(pool, parking));
-
-        createHotel("Hotel Guadalajara Colonial",
+                250000, medellin, typeHotel, 'N', 2, 4,
+                List.of(boutique), List.of(pool, parking));
+        Hotel guadalajaraH = createHotel("Hotel Guadalajara Colonial",
                 "Disfruta del auténtico estilo jalisciense con mariachis y confort.",
                 "Av. Vallarta #2340",
-                120000, guadalajara,
-                List.of(boutique, economico),
-                List.of(pool, parking));
-
-        createHotel("Hotel Chicamocha Real",
+                120000, guadalajara, typeHotel, 'S', 3, 4,
+                List.of(boutique, economico), List.of(pool, parking));
+        Hotel chicamocha = createHotel("Hotel Chicamocha Real",
                 "Vista espectacular a la ciudad y la mejor comodidad santandereana.",
                 "Calle 34 #28-45, Centro",
-                180000, bucaramanga,
-                List.of(economico),
-                List.of(pool, parking, wifi));
-
-        createHotel("Hostal Andino Bogotá",
+                180000, bucaramanga, typeHotel, 'S', 2, 3,
+                List.of(economico), List.of(pool, parking, wifi));
+        Hotel hostalAndino = createHotel("Hostal Andino Bogotá",
                 "Ambiente acogedor y económico, ideal para viajeros que exploran la ciudad.",
                 "Cra 7 #12-34, La Candelaria",
-                90000, bogota,
-                List.of(economico),
-                List.of(pool, parking, wifi));
-
-        createHotel("Costa Caribe Barranquilla",
+                90000, bogota, typeHotel, 'N', 1, 2,
+                List.of(economico), List.of(pool, parking, wifi));
+        Hotel costaCaribe = createHotel("Costa Caribe Barranquilla",
                 "Frente al río, con piscina y terraza para disfrutar del clima costeño.",
                 "Cra 51B #79-45, El Prado",
-                210000, barranquilla,
-                List.of(playa, boutique),
-                List.of(pool, parking, wifi));
-
-        createHotel("Hotel Valle Real Cali",
+                210000, barranquilla, typeCasa, 'N', 6, 4,
+                List.of(playa, boutique), List.of(pool, parking, wifi));
+        Hotel valleReal = createHotel("Hotel Valle Real Cali",
                 "Elegancia y confort en el corazón de la capital salsera.",
                 "Av. 6N #23-10, Granada",
-                160000, cali,
-                List.of(boutique),
-                List.of(pool));
-
-        createHotel("Soledad Inn Express",
+                160000, cali, typeHotel, 'S', 2, 4,
+                List.of(boutique), List.of(pool));
+        Hotel soledadInn = createHotel("Soledad Inn Express",
                 "Opción práctica y económica cerca al aeropuerto.",
                 "Cl 30 #19-50, Centro",
-                75000, soledad,
-                List.of(economico),
-                List.of(wifi));
-
-        createHotel("Buenos Aires Palace Hotel",
+                75000, soledad, typeHotel, 'N', 1, 2,
+                List.of(economico), List.of(wifi));
+        Hotel buenosAiresPalace = createHotel("Buenos Aires Palace Hotel",
                 "Lujo clásico porteño a pasos del Obelisco.",
                 "Av. Corrientes 1234",
-                300000, buenosAiresCity,
-                List.of(boutique),
-                List.of(parking, wifi));
-
-        createHotel("La Plata Garden Hotel",
+                300000, buenosAiresCity, typeHotel, 'S', 2, 4,
+                List.of(boutique), List.of(parking, wifi));
+        Hotel laPlataGarden = createHotel("La Plata Garden Hotel",
                 "Tranquilidad y jardines en una de las ciudades más verdes de Argentina.",
                 "Calle 50 #650",
-                140000, laPlata,
-                List.of(economico, boutique),
-                List.of(pool, wifi));
-
-        createHotel("Ciudad de México Grand Hotel",
+                140000, laPlata, typeDepto, 'S', 4, 4,
+                List.of(economico, boutique), List.of(pool, wifi));
+        Hotel cdmxGrand = createHotel("Ciudad de México Grand Hotel",
                 "Ubicación privileged cerca del Zócalo, con vistas panorámicas.",
                 "Av. Juárez 88, Centro Histórico",
-                280000, ciudadDeMexico,
-                List.of(boutique, playa),
-                List.of(pool, wifi));
+                280000, ciudadDeMexico, typeHotel, 'N', 2, 4,
+                List.of(boutique, playa), List.of(pool, wifi));
+
+        // ── Anfitriones (Fase 2): cada hotel queda con su host (hotUserSec) ──
+        assignHost(poblado, hostUserA);
+        assignHost(guadalajaraH, hostUserB);
+        assignHost(chicamocha, hostUserA);
+        assignHost(hostalAndino, hostUserB);
+        assignHost(costaCaribe, hostUserA);
+        assignHost(valleReal, hostUserB);
+        assignHost(soledadInn, hostUserA);
+        assignHost(buenosAiresPalace, hostUserB);
+        assignHost(laPlataGarden, hostUserA);
+        assignHost(cdmxGrand, hostUserB);
+
+        // ── Extra units para los hoteles multi-unidad (tipo 'S') ────────────
+        createUnit(guadalajaraH, "Habitación 101", 4, 120000);
+        createUnit(guadalajaraH, "Habitación 102", 2, 95000);
+        createUnit(chicamocha,   "Habitación 301", 3, 180000);
+        createUnit(chicamocha,   "Habitación 302", 2, 140000);
+        createUnit(valleReal,    "Suite 1201",     4, 160000);
+        createUnit(buenosAiresPalace, "Habitación 701", 4, 300000);
+        createUnit(laPlataGarden, "Apartamento 1A", 4, 140000);
+        createUnit(laPlataGarden, "Apartamento 1B", 2, 110000);
+
+        // ── Sample reservations ─────────────────────────────────────────────
+        // hoteles con hotConfirmReq='N' -> nacen CONFIRMED
+        createReservation(guestUser, firstUnitOf(poblado),        plusDays(3),  plusDays(6),  2, ReservationStatus.CONFIRMED);
+        createReservation(guestUser, firstUnitOf(costaCaribe),    plusDays(10), plusDays(14), 4, ReservationStatus.CONFIRMED);
+        createReservation(adminUser, firstUnitOf(hostalAndino),   plusDays(5),  plusDays(8),  1, ReservationStatus.CONFIRMED);
+        // hoteles con hotConfirmReq='S' -> nacen PENDING (esperan al administrador)
+        createReservation(guestUser, firstUnitOf(guadalajaraH),   plusDays(7),  plusDays(11), 3, ReservationStatus.PENDING);
+        createReservation(guestUser, firstUnitOf(chicamocha),     plusDays(20), plusDays(23), 2, ReservationStatus.PENDING);
+        createReservation(guestUser, firstUnitOf(laPlataGarden),  plusDays(15), plusDays(19), 4, ReservationStatus.PENDING);
+        // un CANCELLED para probar que no bloquea
+        createReservation(guestUser, firstUnitOf(valleReal),      plusDays(2),  plusDays(5),  2, ReservationStatus.CANCELLED);
+
+        // ── Sample favorites (despues de usuarios y hoteles) ────────────────
+        createFavorite(guestUser, poblado);
+        createFavorite(guestUser, costaCaribe);
+    }
+
+    private void createFavorite(User user, Hotel hotel) {
+        Favorite favorite = new Favorite();
+        favorite.setUser(user);
+        favorite.setHotel(hotel);
+        favoriteRepository.save(favorite);
+    }
+
+    private LocalDate plusDays(int days) {
+        return LocalDate.now().plusDays(days);
+    }
+
+    private HotelUnit firstUnitOf(Hotel hotel) {
+        return hotel.getUnits().get(0);
+    }
+
+    private void createReservation(User user, HotelUnit unit, LocalDate checkIn, LocalDate checkOut,
+                                   int guests, ReservationStatus status) {
+
+        int nights = (int) ChronoUnit.DAYS.between(checkIn, checkOut);
+
+        Reservation reservation = new Reservation();
+        reservation.setUser(user);
+        reservation.setUnit(unit);
+        reservation.setResCheckIn(checkIn);
+        reservation.setResCheckOut(checkOut);
+        reservation.setResGuests(guests);
+        reservation.setResPrice(unit.getUniPrice());
+        reservation.setResTotal(nights * unit.getUniPrice());
+        reservation.setResStatus(status);
+
+        reservationRepository.save(reservation);
     }
 
     private void setupPermissionsForModule(Profile profile, Module module, List<SubModuleSpec> submodules) {
@@ -340,7 +422,7 @@ public class DataInitializer implements ApplicationRunner {
         return moduleRepository.save(module);
     }
 
-    private void createUser(String firstName, String lastName, String email, String rawPassword, Profile profile) {
+    private User createUser(String firstName, String lastName, String email, String rawPassword, Profile profile) {
         User user = User.builder()
                 .userFirstName(firstName)
                 .userLastName(lastName)
@@ -348,7 +430,15 @@ public class DataInitializer implements ApplicationRunner {
                 .userPass(passwordEncoder.encode(rawPassword))
                 .profile(profile)
                 .build();
-        userRepository.save(user);
+        return userRepository.save(user);
+    }
+
+    private HotelType createHotelType(String name, Character multiUnit) {
+        HotelType type = new HotelType();
+        type.setTypName(name);
+        type.setTypMultiUnit(multiUnit);
+        type.setTypState('A');
+        return hotelTypeRepository.save(type);
     }
 
     private Department CreateDepartment(String name, Pais country) {
@@ -374,8 +464,9 @@ public class DataInitializer implements ApplicationRunner {
         return categoryRepository.save(category);
     }
 
-    private void createHotel(String name, String description, String address, int cost, City city,
-                             List<Category> hotelCategories, List<Feature> hotelFeatures) {
+    private Hotel createHotel(String name, String description, String address, int cost, City city,
+                              HotelType type, Character confirmReq, int unitCapacity, int unitPrice,
+                              List<Category> hotelCategories, List<Feature> hotelFeatures) {
 
         Hotel hotel = new Hotel();
 
@@ -384,11 +475,42 @@ public class DataInitializer implements ApplicationRunner {
         hotel.setHotAddress(address);
         hotel.setHotCost(cost);
         hotel.setCity(city);
+        hotel.setType(type);
+        hotel.setHotConfirmReq(confirmReq);
         hotel.setHotState('A');
         hotel.setCategories(new ArrayList<>(hotelCategories));
         hotel.setFeatures(new ArrayList<>(hotelFeatures));
 
+        // Toda unidad de reserva: en tipos de una sola unidad se crea automatica
+        // con el nombre del alojamiento.
+        HotelUnit unit = new HotelUnit();
+        unit.setHotel(hotel);
+        unit.setUniName(name);
+        unit.setUniCapacity(unitCapacity);
+        unit.setUniPrice(unitPrice);
+        unit.setUniState('A');
+        hotel.getUnits().add(unit);
+
+        return hotelRepository.save(hotel);
+    }
+
+    /** Fase 2: asigna el anfitrion de un hotel (hotUserSec). */
+    private void assignHost(Hotel hotel, User host) {
+        hotel.setHost(host);
         hotelRepository.save(hotel);
+    }
+
+    private void createUnit(Hotel hotel, String name, int capacity, int price) {
+
+        HotelUnit unit = new HotelUnit();
+        unit.setHotel(hotel);
+        unit.setUniName(name);
+        unit.setUniCapacity(capacity);
+        unit.setUniPrice(price);
+        unit.setUniState('A');
+
+        hotelUnitRepository.save(unit);
+        hotel.getUnits().add(unit);
     }
 
     private Feature createFeature(String name, Character state) {
