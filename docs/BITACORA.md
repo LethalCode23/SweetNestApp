@@ -330,3 +330,18 @@ Plan: `docs/planes/completados/favoritos.md`.
   `messages_es.properties` están guardados en ISO-8859-1, así que los mensajes con tilde que ya existían
   ("registrado con éxito", "inició sesión", "Módulo") salen con caracteres rotos. Arreglo: convertir esos dos
   archivos a UTF-8. Mientras tanto, los acentos de claves nuevas van como `\uXXXX`.
+
+---
+
+## 2026-11-04 — Submódulo RBAC "Mis favoritos"
+
+- `config/DataInitializer.java`: en el módulo "Mi Cuenta" se agrega el submódulo **"Mis favoritos"** (url `/favorites`)
+  con acciones **R** y **D**, para los perfiles Administrador y Usuario. El frontend lo exige en `/favoritos` y en
+  `/dashboard/favorites`.
+- `setupPermissionsForModule` se llama dos veces para el mismo perfil y módulo: el `PermissionProfiles` tiene la misma PK
+  y `save` hace merge, sin duplicar. Verificado: `GET /api/profiles/{id}/modules` devuelve "Mi Perfil" (U) y
+  "Mis favoritos" (R, D) para los dos perfiles.
+- La API `/api/favorites` no cambia (sigue con `authenticated()`).
+- Pendiente (DT-039 en SweetNestUI): los perfiles creados desde el panel no reciben el submódulo.
+- `docs/RBAC.md` actualizado. `mvnw.cmd test` OK.
+
