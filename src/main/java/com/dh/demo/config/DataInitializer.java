@@ -128,6 +128,14 @@ public class DataInitializer implements ApplicationRunner {
         setupPermissionsForModule(adminProfile, profileModule, profileSubmodules, List.of('U'));
         setupPermissionsForModule(userProfile, profileModule, profileSubmodules, List.of('U'));
 
+        // 4b. Mi Cuenta -> Mis favoritos: ver (R) y quitar (D). Todo usuario logueado lo debe tener;
+        // los registros nuevos lo heredan del perfil default "Usuario".
+        List<SubModuleSpec> favoritesSubmodules = List.of(
+                new SubModuleSpec("Mis favoritos", "favorites")
+        );
+        setupPermissionsForModule(adminProfile, profileModule, favoritesSubmodules, List.of('R', 'D'));
+        setupPermissionsForModule(userProfile, profileModule, favoritesSubmodules, List.of('R', 'D'));
+
         // 5. MÓDULO: Perfiles
         Module profilesModule = createModule("Panel de control", "/profiles", "Perfiles", 'A');
         List<SubModuleSpec> profilesSubmodules = List.of(
