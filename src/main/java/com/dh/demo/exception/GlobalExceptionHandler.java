@@ -2,8 +2,8 @@ package com.dh.demo.exception;
 
 import com.dh.demo.common.ApiResponseCode;
 import com.dh.demo.dto.response.ApiResponse;
+import com.dh.demo.exception.BusinessRuleException;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.juli.logging.Log;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -48,6 +48,17 @@ public class GlobalExceptionHandler {
 
         log.error("Error creating user", ex);
         return buildError("Error interno del servidor", HttpStatus.INTERNAL_SERVER_ERROR, ApiResponseCode.INTERNAL_ERROR);
+    }
+
+    @ExceptionHandler(BusinessRuleException.class)
+    public ResponseEntity<ApiResponse<Void>> handleBusinessRule(BusinessRuleException ex) {
+        return buildError(ex.getMessage(), ex.getStatus(), ex.getCode());
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDataIntegrity(DataIntegrityViolationException ex) {
+        return buildError("No se puede eliminar: el registro tiene datos dependientes",
+                HttpStatus.CONFLICT, ApiResponseCode.DEPENDENT_RECORDS_EXIST);
     }
 
     @ExceptionHandler(EmailSendingException.class)

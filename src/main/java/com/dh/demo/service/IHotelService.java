@@ -3,6 +3,7 @@ package com.dh.demo.service;
 import com.dh.demo.dto.HotelDto;
 import com.dh.demo.dto.HotelFilterDto;
 import com.dh.demo.dto.HotelResponseDto;
+import com.dh.demo.dto.response.SearchSuggestionDto;
 import com.dh.demo.entity.Hotel;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,4 +20,5 @@ public interface IHotelService {
     Page<HotelDto> findAll(Pageable pageable);
     Page<HotelDto> findByHotel(HotelFilterDto hotelFilterDto, Pageable pageable);
     HotelResponseDto findDetailById(Integer id);
+    List<SearchSuggestionDto> getSuggestions(String q);
 }

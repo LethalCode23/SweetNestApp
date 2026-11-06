@@ -5,19 +5,30 @@ import com.dh.demo.entity.Category;
 import com.dh.demo.entity.City;
 import com.dh.demo.entity.Feature;
 import com.dh.demo.entity.Hotel;
+import com.dh.demo.entity.HotelType;
+import com.dh.demo.entity.User;
 import com.dh.demo.exception.HotelNotFoundException;
+import com.dh.demo.exception.HotelTypeNotFoundException;
+import com.dh.demo.exception.UserNotHostException;
+import com.dh.demo.exception.UserNotFoundException;
 import com.dh.demo.mapper.FeatureMapper;
 import com.dh.demo.mapper.HotelMapper;
 import com.dh.demo.repository.CategoryRepository;
 import com.dh.demo.repository.CityRepository;
 import com.dh.demo.repository.HotelRepository;
+import com.dh.demo.repository.HotelTypeRepository;
+import com.dh.demo.repository.IUserRepository;
 import com.dh.demo.service.IHotelService;
 import com.dh.demo.specification.HotelSpecification;
 import lombok.AllArgsConstructor;
+import com.dh.demo.dto.response.SearchSuggestionDto;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -29,11 +40,14 @@ public class HotelService implements IHotelService {
     private final HotelRepository repository;
     private final CityRepository cityRepository;
     private final CategoryRepository categoryRepository;
+    private final HotelTypeRepository hotelTypeRepository;
+    private final IUserRepository userRepository;
     private final FeatureService featureService;
     private final FeatureMapper featureMapper;
     private final HotelMapper hotelMapper;
 
     @Override
+    @Transactional
     public HotelDto save(HotelDto hotelDto) {
 
         Hotel hotel = new Hotel();
@@ -43,9 +57,13 @@ public class HotelService implements IHotelService {
         hotel.setHotAddress(hotelDto.getHotAddress());
         hotel.setHotCost(hotelDto.getHotCost());
         hotel.setHotState(hotelDto.getHotState());
+        hotel.setHotConfirmReq(hotelDto.getHotConfirmReq() == null ? 'S' : hotelDto.getHotConfirmReq());
 
         City city = cityRepository.findById(hotelDto.getHotCitSec())
                 .orElseThrow(() -> new RuntimeException("City not found"));
+
+        hotel.setType(findType(hotelDto.getTypeId()));
+        hotel.setHost(findHost(hotelDto.getHostId()));
 
         if (hotelDto.getCategoryIds() != null && !hotelDto.getCategoryIds().isEmpty()) {
 
@@ -68,40 +86,23 @@ public class HotelService implements IHotelService {
         hotel.setCity(city);
         Hotel savedHotel = repository.save(hotel);
 
-        return new HotelDto(
-                savedHotel.getHotSec(),
-                savedHotel.getHotName(),
-                savedHotel.getHotDescription(),
-                savedHotel.getHotAddress(),
-                savedHotel.getHotCost(),
-                savedHotel.getHotState(),
-                savedHotel.getCity().getCitSec(),
-                savedHotel.getCity().getCitName()
-        );
+        return mapToDto(savedHotel);
     }
 
 
     @Override
+    @Transactional(readOnly = true)
     public Optional<HotelDto> findById(Integer id) {
 
-        return repository.findById(id)
-                .map(hotel -> new HotelDto(
-                        hotel.getHotSec(),
-                        hotel.getHotName(),
-                        hotel.getHotDescription(),
-                        hotel.getHotAddress(),
-                        hotel.getHotCost(),
-                        hotel.getHotState(),
-                        hotel.getCity() != null ? hotel.getCity().getCitSec() : null,
-                        hotel.getCity() != null ? hotel.getCity().getCitName() : null
-                ));
+        return repository.findById(id).map(this::mapToDto);
     }
 
     @Override
+    @Transactional
     public HotelDto update(Integer id, HotelDto hotelDto) {
 
         Hotel hotel = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Hotel no found"));
+                .orElseThrow(() -> new HotelNotFoundException("Hotel no found with id: " + id));
 
         City city = cityRepository.findById(hotelDto.getHotCitSec())
                 .orElseThrow(() -> new RuntimeException("City no found"));
@@ -112,6 +113,17 @@ public class HotelService implements IHotelService {
         hotel.setHotCost(hotelDto.getHotCost());
         hotel.setCity(city);
         hotel.setHotState(hotelDto.getHotState());
+
+        if (hotelDto.getTypeId() != null) {
+            hotel.setType(findType(hotelDto.getTypeId()));
+        }
+        if (hotelDto.getHotConfirmReq() != null) {
+            hotel.setHotConfirmReq(hotelDto.getHotConfirmReq());
+        }
+        // Fase 2: hostId null = no cambia el anfitrion actual.
+        if (hotelDto.getHostId() != null) {
+            hotel.setHost(findHost(hotelDto.getHostId()));
+        }
 
         if (hotelDto.getCategoryIds() != null && !hotelDto.getCategoryIds().isEmpty()) {
 
@@ -133,7 +145,39 @@ public class HotelService implements IHotelService {
 
         Hotel updated = repository.save(hotel);
 
-        return null;
+        return mapToDto(updated);
+    }
+
+    private HotelType findType(Integer typeId) {
+
+        if (typeId == null) {
+            throw new HotelTypeNotFoundException("El tipo de alojamiento es obligatorio");
+        }
+
+        return hotelTypeRepository.findById(typeId)
+                .orElseThrow(() -> new HotelTypeNotFoundException("Tipo de alojamiento no encontrado con id: " + typeId));
+    }
+
+    /**
+     * Anfitrion de un hotel (Fase 2): hostId null = sin anfitrion.
+     * El usuario debe existir (404 / 1004) y estar marcado como anfitrion
+     * con userHost='S' (409 / 1020), si no no puede ser host.
+     */
+    private User findHost(Long hostId) {
+
+        if (hostId == null) {
+            return null;
+        }
+
+        User user = userRepository.findById(hostId)
+                .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado con id: " + hostId));
+
+        if (user.getUserHost() == null || user.getUserHost() != 'S') {
+            throw new UserNotHostException(
+                    "El usuario no esta marcado como anfitrion (userHost='S'): " + hostId);
+        }
+
+        return user;
     }
 
     @Override
@@ -156,76 +200,7 @@ public class HotelService implements IHotelService {
     }
 
     private HotelDto mapToDto(Hotel hotel) {
-
-        HotelDto dto = new HotelDto();
-
-        dto.setHotSec(hotel.getHotSec());
-        dto.setHotName(hotel.getHotName());
-        dto.setHotDescription(hotel.getHotDescription());
-        dto.setHotAddress(hotel.getHotAddress());
-        dto.setHotCost(hotel.getHotCost());
-        dto.setHotState(hotel.getHotState());
-
-        dto.setHotCitSec(
-                hotel.getCity() != null
-                        ? hotel.getCity().getCitSec()
-                        : null
-        );
-
-        dto.setHotCitName(
-                hotel.getCity() != null
-                        ? hotel.getCity().getCitName()
-                        : null
-        );
-
-        if (hotel.getHotelImages() != null && !hotel.getHotelImages().isEmpty()) {
-
-            List<HotelImagesDto> imagesUrls = hotel.getHotelImages().stream()
-                    .map(img -> new HotelImagesDto(
-                            img.getHotImgSec(),
-                            hotel.getHotSec(),
-                            img.getHotImgUrl(),
-                            img.getHotImgPri()
-                    ))
-                    .collect(Collectors.toList());
-
-            dto.setHotelImagesUrl(imagesUrls);
-        }
-
-        if (hotel.getCategories() != null) {
-
-            List<CategoryDto> categoryDto = hotel.getCategories().stream()
-                    .map(category -> {
-                        CategoryDto cDto = new CategoryDto();
-                        cDto.setCatSec(category.getCatSec());
-                        cDto.setCatName(category.getCatName());
-                        cDto.setCatEst(category.getCatEst());
-                        return cDto;
-                    })
-                    .collect(Collectors.toList());
-
-            dto.setCategories(categoryDto);
-        }
-
-        if (hotel.getFeatures() != null) {
-
-            List<FeatureDto> featureDto = hotel.getFeatures().stream()
-                    .map(feature -> {
-
-                        FeatureDto iDto = new FeatureDto();
-                        iDto.setFeaSec(feature.getFeaSec());
-                        iDto.setFeaName(feature.getFeaName());
-                        iDto.setFeaEst(feature.getFeaEst());
-                        iDto.setFeaIconUrl(feature.getFeaIconUrl());
-
-                        return iDto;
-                    })
-                    .collect(Collectors.toList());
-
-            dto.setFeatures(featureDto);
-        }
-
-        return dto;
+        return hotelMapper.toListDto(hotel);
     }
 
     @Override
@@ -235,5 +210,28 @@ public class HotelService implements IHotelService {
                 .orElseThrow(() -> new HotelNotFoundException("Hotel no found with id: " + id));
 
         return hotelMapper.toDetailDto(hotel);
+    }
+
+    private static final int SUGGESTIONS_LIMIT = 10;
+    private static final int SUGGESTIONS_MIN_LENGTH = 2;
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<SearchSuggestionDto> getSuggestions(String q) {
+
+        if (q == null || q.trim().length() < SUGGESTIONS_MIN_LENGTH) {
+            return List.of();
+        }
+        String term = q.trim();
+
+        // Ciudades primero (es lo que filtra el buscador), luego hoteles hasta completar el tope.
+        List<SearchSuggestionDto> result = new ArrayList<>(
+                cityRepository.findSuggestions(term, PageRequest.of(0, SUGGESTIONS_LIMIT)));
+
+        int remaining = SUGGESTIONS_LIMIT - result.size();
+        if (remaining > 0) {
+            result.addAll(repository.findSuggestions(term, PageRequest.of(0, remaining)));
+        }
+        return result;
     }
 }

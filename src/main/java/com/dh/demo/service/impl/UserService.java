@@ -88,7 +88,8 @@ public class UserService implements IUserService {
                 savedUser.getUserFirstName(),
                 savedUser.getUserLastName(),
                 savedUser.getUserEmail(),
-                mapToDto(profileSave)
+                mapToDto(profileSave),
+                hostOf(savedUser)
         );
 
         return new RegisterResponseDto(userDto);
@@ -126,6 +127,7 @@ public class UserService implements IUserService {
                 .lastName(user.getUserLastName())
                 .email(user.getUserEmail())
                 .profile(mapToDto(profile))
+                .host(hostOf(user))
                 .build();
 
         AuthDto authDto = AuthDto.builder()
@@ -193,9 +195,19 @@ public class UserService implements IUserService {
         user.setUserEmail(request.getEmail());
         user.setProfile(profile);
 
+        // Marca de anfitrion (Fase 2): null = no cambia la marca.
+        if (request.getHost() != null) {
+            user.setUserHost(request.getHost().charAt(0));
+        }
+
         repository.save(user);
 
         return mapToUserDto(user);
+    }
+
+    /** Marca de anfitrion como String ('S'/'N') para los DTOs (leccion B1: no Character). */
+    private String hostOf(User user) {
+        return user.getUserHost() != null ? String.valueOf(user.getUserHost()) : null;
     }
 
     private UserDto mapToUserDto(User user) {
@@ -205,6 +217,7 @@ public class UserService implements IUserService {
                 .firstName(user.getUserFirstName())
                 .lastName(user.getUserLastName())
                 .email(user.getUserEmail())
+                .host(hostOf(user))
                 .build();
 
         if (user.getProfile() != null) {

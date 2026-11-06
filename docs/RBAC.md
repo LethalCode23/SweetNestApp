@@ -80,8 +80,8 @@ sistema completo sin cargar nada a mano.
 
 | Perfil | `state` | `isDefault` | `hasControlAccess` | Acceso |
 | --- | --- | --- | --- | --- |
-| Administrador | Activo | No | **Sí** | Todos los módulos con CRUD completo (excepto "Mi Cuenta", solo Editar) |
-| Usuario | Activo | **Sí** | No | Solo el módulo "Mi Cuenta" con acción Editar (U) |
+| Administrador | Activo | No | **Sí** | Todos los módulos con CRUD completo (excepto "Mi Cuenta": Mi Perfil solo Editar, Mis favoritos Listar y Borrar) |
+| Usuario | Activo | **Sí** | No | Solo el módulo "Mi Cuenta": Mi Perfil (U) y Mis favoritos (R, D) |
 
 ### Módulos y submódulos
 
@@ -90,11 +90,13 @@ sistema completo sin cargar nada a mano.
 | Hoteles | `/hotels` | Hoteles | Administrador |
 | Catálogos | `/catalog` | Países, Departamentos, Ciudades, Categorías, Características | Administrador |
 | Usuarios y Seguridad | `/security` | Usuarios | Administrador |
-| Mi Cuenta | `/userProfile` | Mi Perfil | Administrador y Usuario |
+| Mi Cuenta | `/userProfile` | Mi Perfil (`/userProfile`), Mis favoritos (`/favorites`) | Administrador y Usuario |
 | Panel de control | `/profiles` | Perfiles | Administrador |
 
-Los permisos por acción se crean con `FULL_CRUD` (R, C, U, D), salvo "Mi Cuenta" que solo recibe
-la acción **U** (Editar) para ambos perfiles.
+Los permisos por acción se crean con `FULL_CRUD` (R, C, U, D), salvo "Mi Cuenta": "Mi Perfil" solo recibe
+la acción **U** (Editar) y "Mis favoritos" recibe **R** y **D** (ver y quitar), para ambos perfiles.
+"Mis favoritos" lo debe tener todo usuario logueado: los registros nuevos lo heredan del perfil
+default "Usuario"; los perfiles creados desde el panel hay que asignárselo a mano (deuda en el frontend).
 
 ### Usuarios de prueba
 

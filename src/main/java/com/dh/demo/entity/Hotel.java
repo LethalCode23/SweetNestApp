@@ -37,8 +37,29 @@ public class Hotel {
     @JoinColumn(name = "hotCitSec", nullable = false)
     private City city;
 
+    /** Tipo de alojamiento (Hotel, Casa, Apartamento). */
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "hotTypSec", nullable = false)
+    private HotelType type;
+
+    /**
+     * Politica de reserva del hotel.
+     * 'S' = la reserva requiere confirmacion (nace PENDING).
+     * 'N' = reserva inmediata (nace CONFIRMED).
+     */
+    @Column(name = "hotConfirmReq")
+    private Character hotConfirmReq;
+
+    /** Anfitrion responsable del hotel. Null = aun sin asignar (Fase 2). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "hotUserSec")
+    private User host;
+
     @Column(name = "hotState")
     private Character hotState;
+
+    @OneToMany(mappedBy = "hotel", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<HotelUnit> units = new ArrayList<>();
 
     @OneToMany(mappedBy = "hotel", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<HotelImages> HotelImages = new ArrayList<>();
