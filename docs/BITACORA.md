@@ -379,3 +379,53 @@ Plan: `docs/planes/completados/favoritos.md`.
   Usuarios propios para no cambiar las reservas que cuentan los tests existentes.
 - Nuevo `ReviewsAcceptanceTests` (5). Total 70/70 (corrido en una copia, con el backend del usuario levantado).
 
+---
+
+## 2026-11-16 — Reservas · Fase 2 Bloque B: cruce de disponibilidad + bloqueo contra doble reserva
+
+- **Problema:** `ReservationService.create` no validaba la regla 6, así que se podían crear dos reservas activas
+  sobre la misma unidad y las mismas noches. `1011 UNIT_UNAVAILABLE` existía pero no se usaba.
+- `ReservationRepository.existsOverlap(unitId, checkIn, checkOut, occupying)`: cruce `checkIn < :checkOut AND checkOut > :checkIn`
+  con `PENDING`/`CONFIRMED`. El día de salida queda libre.
+- `HotelUnitRepository.findByIdForUpdate` (`@Lock(PESSIMISTIC_WRITE)` → `SELECT … FOR UPDATE`). `create` lee la unidad con este método,
+  así que dos reservas simultáneas de la misma unidad se procesan en serie y la segunda ya ve el cruce. Las demás unidades no se bloquean.
+- `create` lanza `UnitUnavailableException` (409/1011) después de validar fechas y capacidad. `confirm` no cambia, porque una `PENDING` ya ocupa la unidad.
+- Tests:
+  - `ReservasPhase2BAcceptanceTests` (6): mismo rango, cruce parcial, rango que envuelve, el día de salida queda libre,
+    una cancelada no bloquea, otra unidad del mismo hotel sí se puede reservar.
+  - `ReservasConcurrencyTests` (1, sin `@Transactional`): dos hilos con la misma unidad y el mismo rango → 1 guardada y 1 con `1011`.
+    Comprobado que **sin** el bloqueo el test falla (se guardan 2).
+- Total 77/77 (corrido en una copia, con el backend del usuario levantado). `API.md` §17 documenta el 409/1011.
+- **Frontend:** el Bloque D (reservar desde el detalle) debe mostrar el `message` del 409.
+
+---
+
+## 2026-11-16 — Perfiles: crear y editar funcionan (para el rediseño del panel, Fase 5 del front)
+
+- **Bug:** `POST /api/profile/save` respondía **500** siempre que el JSON no traía `proId`, porque `ProfileDto.proId` era `long`
+  y Jackson no puede asignarle `null`. Se cambió a `Long`.
+- `ProfileService.save` ahora:
+  - fuerza `id = null`, para que siempre sea un alta;
+  - guarda `isDefault`, que antes se perdía;
+  - aplica defaults: `proState='A'`, `isDefault='N'`, `hasControlAccess='N'`.
+- `ProfileService.update` ahora guarda también `isDefault` y `hasControlAccess`; antes solo guardaba el nombre y el estado.
+- **Regla nueva: siempre hay exactamente un perfil por defecto**, porque el registro usa `findByIsDefault('S')`, que devuelve un `Optional`:
+  - al marcar uno, los demás se desmarcan;
+  - desmarcar el único da `400/1001`;
+  - si el nombre está vacío → `400/1001`.
+- Nuevo `ProfilesTests` (5). Total 82/82, corrido en una copia.
+- Pendientes, registrados en `SweetNestUI/docs/DEUDA_TECNICA.md`:
+  - `api/profile` no exige `hasControlAccess` (DT-042);
+  - `DELETE` con usuarios da 500 (DT-043).
+
+---
+
+## 2026-11-16 — Reservas · Fase 5 (parcial): unidades libres por rango
+
+- Lo pide el Bloque D del front: el botón "Reservar ahora" no estaba conectado y para reservar hay que mandar un `unitId`.
+- `GET /api/hotel-unit/hotel/{hotSec}/available?checkIn&checkOut` (público; ya lo cubre `GET /api/hotel-unit/hotel/**`).
+  - `HotelUnitService.findAvailable` parte de las unidades activas y les resta `findBusyUnitIdsInHotel`, la consulta que ya existía.
+  - Usa las mismas validaciones que `ReservationService.create`: `1014` si el rango es inválido o faltan fechas (los params son `required=false` para no dar 500), `1015` si la entrada está en el pasado.
+- Nuevo `HotelUnitAvailabilityTests` (5): sin token, unidad reservada excluida, cancelada no bloquea, día de salida libre, 400.
+  Total 87/87 (corrido en una copia). `API.md` §17.
+

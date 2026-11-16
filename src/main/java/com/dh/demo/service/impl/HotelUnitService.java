@@ -7,6 +7,8 @@ import com.dh.demo.entity.enums.ReservationStatus;
 import com.dh.demo.exception.DependentRecordsExistException;
 import com.dh.demo.exception.HotelNotFoundException;
 import com.dh.demo.exception.InactiveRecordException;
+import com.dh.demo.exception.InvalidDateRangeException;
+import com.dh.demo.exception.ReservationInPastException;
 import com.dh.demo.exception.UnitNotFoundException;
 import com.dh.demo.mapper.HotelUnitMapper;
 import com.dh.demo.repository.HotelRepository;
@@ -16,7 +18,10 @@ import com.dh.demo.service.IHotelUnitService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -73,6 +78,31 @@ public class HotelUnitService implements IHotelUnitService {
 
         return hotelUnitRepository.findByHotelHotSecAndUniStateOrderByUniNameAsc(hotSec, 'A')
                 .stream().map(mapper::toDto).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<HotelUnitDto> findAvailable(Integer hotSec, LocalDate checkIn, LocalDate checkOut) {
+
+        if (!hotelRepository.existsById(hotSec)) {
+            throw new HotelNotFoundException("Hotel no encontrado con id: " + hotSec);
+        }
+        // Mismas reglas de fechas que al crear la reserva (ReservationService.create)
+        if (checkIn == null || checkOut == null || !checkOut.isAfter(checkIn)) {
+            throw new InvalidDateRangeException("La fecha de salida debe ser posterior a la de entrada");
+        }
+        if (checkIn.isBefore(LocalDate.now())) {
+            throw new ReservationInPastException("La fecha de entrada no puede estar en el pasado");
+        }
+
+        Set<Integer> busy = new HashSet<>(
+                reservationRepository.findBusyUnitIdsInHotel(hotSec, checkIn, checkOut, OCCUPYING));
+
+        return hotelUnitRepository.findByHotelHotSecAndUniStateOrderByUniNameAsc(hotSec, 'A')
+                .stream()
+                .filter(u -> !busy.contains(u.getUniSec()))
+                .map(mapper::toDto)
+                .toList();
     }
 
     @Override

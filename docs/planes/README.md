@@ -16,7 +16,7 @@ Al terminar un plan: `git mv` a `completados/`, actualizar esta tabla y anotar e
 ### En curso
 | Plan | Qué falta |
 |---|---|
-| [`reservas.md`](en-curso/reservas.md) | **Fase 2B** (cruce de disponibilidad + lock anti doble reserva) ← siguiente; fases 3–7 |
+| [`reservas.md`](en-curso/reservas.md) | 2B ✅ y unidades libres de la Fase 5 ✅ (2026-11-16). **Fase 3** (unidad automática para tipos de una sola unidad) ← siguiente; fases 4, 6 y 7 |
 | [`politicas-producto.md`](en-curso/politicas-producto.md) | HU #26: commit + prueba con el frontend |
 | [`resenas.md`](en-curso/resenas.md) | HU #28: commit + prueba con el frontend |
 

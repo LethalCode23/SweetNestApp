@@ -6,8 +6,10 @@ import com.dh.demo.service.IHotelUnitService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -20,6 +22,17 @@ public class HotelUnitController {
     @GetMapping("/hotel/{hotSec}")
     public ResponseEntity<ApiResponse<List<HotelUnitDto>>> findByHotel(@PathVariable Integer hotSec) {
         return ResponseEntity.ok(ApiResponse.success("Unidades obtenidas", service.findByHotel(hotSec)));
+    }
+
+    /** Publico: unidades activas libres en [checkIn, checkOut) (el dia de salida queda libre). */
+    @GetMapping("/hotel/{hotSec}/available")
+    public ResponseEntity<ApiResponse<List<HotelUnitDto>>> findAvailable(
+            @PathVariable Integer hotSec,
+            // required = false: si faltan, el service responde 400/1014 (sin parametro Spring daria 500)
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkIn,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOut) {
+        return ResponseEntity.ok(ApiResponse.success("Unidades disponibles obtenidas",
+                service.findAvailable(hotSec, checkIn, checkOut)));
     }
 
     @GetMapping("/{id}")

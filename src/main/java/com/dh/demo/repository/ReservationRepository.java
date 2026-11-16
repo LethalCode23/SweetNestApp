@@ -36,6 +36,23 @@ public interface ReservationRepository extends JpaRepository<Reservation, Intege
             Long userSec, Integer hotSec, List<ReservationStatus> statuses, LocalDate checkOut);
 
     /**
+     * Fase 2B (regla 6): true si la unidad tiene una reserva activa (PENDING / CONFIRMED)
+     * que se cruza con [checkIn, checkOut). El dia de salida queda libre.
+     */
+    @Query("""
+            SELECT CASE WHEN COUNT(r) > 0 THEN true ELSE false END
+            FROM Reservation r
+            WHERE r.unit.uniSec = :unitId
+              AND r.resStatus IN :occupying
+              AND r.resCheckIn < :checkOut
+              AND r.resCheckOut > :checkIn
+            """)
+    boolean existsOverlap(@Param("unitId") Integer unitId,
+                          @Param("checkIn") LocalDate checkIn,
+                          @Param("checkOut") LocalDate checkOut,
+                          @Param("occupying") List<ReservationStatus> occupying);
+
+    /**
      * Unidades del hotel con reservas activas (PENDING / CONFIRMED) que se cruzan
      * con el rango pedido. Se usa para la disponibilidad.
      * Cruce: existente.checkIn < nueva.checkOut && existente.checkOut > nueva.checkIn

@@ -12,10 +12,10 @@ Plan de implementación del sprint. Documento de diseño, sin código.
 | 1 | ✅ 2026-10-18 | Tablas `hotel_types`, `hotel_units`, `reservations`; `type_id` y `hotConfirmReq` en hoteles; repos, services, DTOs, mappers, controllers con `ApiResponse`. 26/26 tests |
 | 2 · Bloque A | ✅ 2026-10-25 | Anfitrión: `users.userHost`, FK `hotels.hotUserSec`, `GET /api/reservations/incoming`, confirmar por admin o anfitrión (`1019`, `1020`). 40/40 tests |
 | Extra | ✅ 2026-11-01 | Calendario público `GET /api/hotel/{hotSec}/unavailable-dates` (días sin unidades libres). 54/54 tests |
-| 2 · Bloque B | ⏳ siguiente | Cruce de disponibilidad + lock anti-doble-reserva (activar `1011 UNIT_UNAVAILABLE`) |
-| 3 | ⬜ | Unidad automática para tipos de una sola unidad |
+| 2 · Bloque B | ✅ 2026-11-16 | Regla 6: cruce de fechas al crear (`409/1011`) + `SELECT … FOR UPDATE` sobre la unidad contra la doble reserva simultánea. 77/77 tests |
+| 3 | ⏳ siguiente | Unidad automática para tipos de una sola unidad |
 | 4 | ⬜ | Búsqueda por disponibilidad |
-| 5 | ⬜ | Detalle del hotel con unidades libres |
+| 5 | ⏳ parcial | ✅ 2026-11-16 `GET /api/hotel-unit/hotel/{hotSec}/available?checkIn&checkOut` (público, lo usa el `BookingCard`). Falta: precio "desde $X" en las cards de búsqueda |
 | 6 | ⬜ | Frontend (SweetNestUI) |
 | 7 | ⬜ | Datos seed, pruebas y docs |
 

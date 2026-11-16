@@ -1383,11 +1383,15 @@ Gestión de perfiles/roles (CRUD completo). / Profile (role) management. Requier
 
 | Campo | Tipo | Descripción |
 | --- | --- | --- |
-| `proId` | `long` | ID (autogenerado) |
-| `proName` | `String` | Nombre del perfil |
-| `proState` | `Character` | Estado (`A`/`I`) |
-| `isDefault` | `Character` | Si es perfil por defecto (`S`/`N`) |
-| `hasControlAccess` | `Character` | Si tiene control de acceso RBAC (`S`/`N`) |
+| `proId` | `Long` | ID (autogenerado; en el alta no se envía) |
+| `proName` | `String` | Nombre del perfil (obligatorio → si falta, `400/1001`) |
+| `proState` | `Character` | Estado (`A`/`I`, por defecto `A`) |
+| `isDefault` | `Character` | Si es perfil por defecto (`S`/`N`, por defecto `N`) |
+| `hasControlAccess` | `Character` | Si tiene control de acceso RBAC (`S`/`N`, por defecto `N`) |
+
+**Perfil por defecto (2026-11-16):** siempre hay exactamente uno, porque el registro asigna ese perfil a las cuentas nuevas.
+Si un alta o edición llega con `isDefault='S'`, los demás perfiles quedan en `'N'`.
+Desmarcar el único perfil por defecto responde `400` con código `1001`: hay que marcar otro.
 
 ---
 
@@ -1831,6 +1835,40 @@ curl -s -X PUT -H "Authorization: Bearer $ADMIN_TOKEN" -H "Content-Type: applica
 | --- | --- | --- |
 | `1019` `HOST_NOT_ASSIGNED` | 409 | Un no-admin confirma una reserva cuyo hotel no tiene anfitrión |
 | `1020` `USER_NOT_HOST` | 409 | `hostId` apunta a un usuario sin `userHost='S'` |
+
+### `POST /api/reservations`: unidad ocupada (Fase 2 · Bloque B)
+
+Si la unidad ya tiene una reserva `PENDING` o `CONFIRMED` que se cruza con las fechas pedidas,
+la respuesta es `409` con código `1011`. Hay cruce cuando `existente.checkIn < nueva.checkOut` y `existente.checkOut > nueva.checkIn`.
+El día de salida queda libre: se puede entrar el mismo día en que sale otra reserva.
+Las reservas `CANCELLED` y `COMPLETED` no bloquean. Si llegan dos peticiones a la vez para la misma unidad,
+se procesan una detrás de otra (`SELECT … FOR UPDATE` sobre la unidad): solo una se guarda y la otra recibe `1011`.
+
+```bash
+curl -s -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"unitId":1,"checkIn":"2032-01-10","checkOut":"2032-01-14","guests":1}' \
+  http://localhost:8080/api/reservations
+# repetir la misma petición →
+# {"success":false,"message":"La unidad ya esta reservada en esas fechas","code":1011,"data":null}
+```
+
+| Código | HTTP | Cuándo / When |
+| --- | --- | --- |
+| `1011` `UNIT_UNAVAILABLE` | 409 | La unidad ya está reservada (PENDING/CONFIRMED) en un rango que se cruza |
+
+### `GET /api/hotel-unit/hotel/{hotSec}/available?checkIn=YYYY-MM-DD&checkOut=YYYY-MM-DD` (público)
+
+Devuelve las unidades **activas** del hotel que no tienen reservas `PENDING` o `CONFIRMED` cruzadas con `[checkIn, checkOut)`.
+Usa la misma regla de cruce que la creación de reservas, así que el día de salida queda libre. El frontend la usa en el detalle
+para que el usuario elija entre las unidades libres.
+
+- `checkIn`/`checkOut` ausentes o `checkOut <= checkIn` → `400/1014`; `checkIn` en el pasado → `400/1015`; hotel inexistente → `404/1007`.
+
+```bash
+curl -s "http://localhost:8080/api/hotel-unit/hotel/5/available?checkIn=2032-01-10&checkOut=2032-01-14"
+# {"success":true,"message":"Unidades disponibles obtenidas","code":0,
+#  "data":[{"uniSec":7,"hotSec":5,"uniName":"Habitación 102","uniCapacity":2,"uniPrice":180000,"uniState":"A"}]}
+```
 
 ---
 
