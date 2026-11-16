@@ -2,7 +2,7 @@
 
 ## Estado
 - ✅ Fase 1 — Backend: `GET /api/hotel/suggestions` (2026-10-31)
-- ⬜ Frontend (repo `SweetNestUI`, fuera de este plan): autocompletado en `HotelFilters.jsx`
+- ✅ Frontend (repo `SweetNestUI`): `DestinationAutocomplete` en el home y en resultados (2026-10-31, ver su BITACORA)
 
 ## Ticket
 "Al ingresar datos en el campo de búsqueda, se deben ofrecer sugerencias y autocompletar las

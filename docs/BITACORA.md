@@ -345,3 +345,37 @@ Plan: `docs/planes/completados/favoritos.md`.
 - Pendiente (DT-039 en SweetNestUI): los perfiles creados desde el panel no reciben el submódulo.
 - `docs/RBAC.md` actualizado. `mvnw.cmd test` OK.
 
+---
+
+## 2026-11-12 — HU #26: Políticas del producto
+
+- Nueva entidad `HotelPolicy` → tabla `hotel_policies` (prefijo `pol`: `polSec`, `polTitle`, `polDescription`,
+  `polOrder`, FK `polHotSec`). `Hotel.policies` es `@OneToMany` con `cascade=ALL`, `orphanRemoval` y `@OrderBy("polOrder ASC")`.
+- `HotelResponseDto.policies` (`List<HotelPolicyDto>`) viaja en el `GET /api/hotel/findDetailById/{id}` existente (público);
+  no se agregó endpoint ni CRUD de admin (pendiente si se necesita editar desde el panel).
+- `DataInitializer.createHotel` siembra 6 políticas estándar por hotel (`addPolicies`). Sin cambio de orden de creación.
+- `mvnw.cmd test`: 61/61 en verde.
+
+### Edición desde el panel (mismo día)
+
+- `HotelDto.policies` (`@Valid`) + `@Valid` en `save`/`update` de `HotelController`; `HotelPolicyDto` con `@NotBlank`/`@Size` (100 / 1000).
+- `HotelService.replacePolicies`: `null` = no cambia; lista = reemplaza en ese orden (orphanRemoval borra las quitadas).
+- `HotelMapper.toListDto` también devuelve `policies` (el panel edita desde ese DTO).
+- Nuevo `HotelPoliciesTests` (4 casos: reemplazo en orden, `[]` borra, ausente conserva, título vacío → 400). Total 65/65.
+- Ojo: correr `mvnw test` con el backend levantado recompila `target/` debajo del proceso y rompe el detalle con
+  `NoSuchMethodError`. Parar el backend antes o probar en una copia.
+
+---
+
+## 2026-11-12 — HU #28: Puntuar producto
+
+- Entidad `Review` (`reviews`, prefijo `rev`, `UNIQUE (revUserSec, revHotSec)`, `ON DELETE CASCADE`) + `ReviewRepository`.
+- `ReviewService`: elegibilidad = reserva `CONFIRMED`/`COMPLETED` con check-out ≤ hoy (`ReservationRepository.exists…`);
+  upsert (una por usuario + hotel); recalcula `Hotel.hotRatingAvg` (1 decimal) / `hotRatingCount`.
+- `ReviewController` `api/reviews`: `GET /hotel/{id}` (público, `permitAll`), `GET /hotel/{id}/mine`, `PUT /hotel/{id}`.
+  Mensajes `review.*` en los 3 properties. Código nuevo `REVIEW_NOT_ALLOWED(1021)` → 403.
+- `ratingAvg`/`ratingCount` en `HotelResponseDto` (detalle) y `HotelDto` (cards, favoritos).
+- Seed: usuarios `viajera@` / `viajero@` con estadías pasadas y 5 reseñas (Poblado 4.5, Costa Caribe 3.5, Hostal Andino 5.0).
+  Usuarios propios para no cambiar las reservas que cuentan los tests existentes.
+- Nuevo `ReviewsAcceptanceTests` (5). Total 70/70 (corrido en una copia, con el backend del usuario levantado).
+

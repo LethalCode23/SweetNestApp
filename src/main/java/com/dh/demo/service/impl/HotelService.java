@@ -5,6 +5,7 @@ import com.dh.demo.entity.Category;
 import com.dh.demo.entity.City;
 import com.dh.demo.entity.Feature;
 import com.dh.demo.entity.Hotel;
+import com.dh.demo.entity.HotelPolicy;
 import com.dh.demo.entity.HotelType;
 import com.dh.demo.entity.User;
 import com.dh.demo.exception.HotelNotFoundException;
@@ -83,6 +84,10 @@ public class HotelService implements IHotelService {
             hotel.setFeatures(features);
         }
 
+        if (hotelDto.getPolicies() != null) {
+            replacePolicies(hotel, hotelDto.getPolicies());
+        }
+
         hotel.setCity(city);
         Hotel savedHotel = repository.save(hotel);
 
@@ -143,9 +148,33 @@ public class HotelService implements IHotelService {
             hotel.setFeatures(features);
         }
 
+        // HU #26: null = no cambia; lista (incluso vacia) = reemplaza todas.
+        if (hotelDto.getPolicies() != null) {
+            replacePolicies(hotel, hotelDto.getPolicies());
+        }
+
         Hotel updated = repository.save(hotel);
 
         return mapToDto(updated);
+    }
+
+    /**
+     * Reemplaza las politicas del hotel por las recibidas, en ese orden (polOrder = posicion + 1).
+     * Las que ya no vienen se borran por orphanRemoval.
+     */
+    private void replacePolicies(Hotel hotel, List<HotelPolicyDto> dtos) {
+
+        hotel.getPolicies().clear();
+
+        for (int i = 0; i < dtos.size(); i++) {
+            HotelPolicyDto dto = dtos.get(i);
+            HotelPolicy policy = new HotelPolicy();
+            policy.setPolTitle(dto.getPolTitle().trim());
+            policy.setPolDescription(dto.getPolDescription().trim());
+            policy.setPolOrder(i + 1);
+            policy.setHotel(hotel);
+            hotel.getPolicies().add(policy);
+        }
     }
 
     private HotelType findType(Integer typeId) {

@@ -4,6 +4,7 @@ import com.dh.demo.entity.*;
 import com.dh.demo.entity.Module;
 import com.dh.demo.entity.enums.ReservationStatus;
 import com.dh.demo.repository.*;
+import com.dh.demo.service.IReviewService;
 import jakarta.transaction.Transactional;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -38,6 +39,8 @@ public class DataInitializer implements ApplicationRunner {
     private final IPermissionProfilesRepository permissionProfilesRepository;
     private final IPermissionProfilesModuleRepository permissionProfilesModuleRepository;
     private final IPermissionProfilesModulePerRepository permissionProfilesModulePerRepository;
+    private final ReviewRepository reviewRepository;
+    private final IReviewService reviewService;
 
     public DataInitializer(PaisRepository paisRepository,
                            DepartmentRepository departmentRepository,
@@ -56,8 +59,12 @@ public class DataInitializer implements ApplicationRunner {
                            IPermissionProfilesRepository permissionProfilesRepository,
                            IPermissionProfilesModuleRepository permissionProfilesModuleRepository,
                            IPermissionProfilesModulePerRepository permissionProfilesModulePerRepository,
-                           IFeatureRepository featureRepository
+                           IFeatureRepository featureRepository,
+                           ReviewRepository reviewRepository,
+                           IReviewService reviewService
     ) {
+        this.reviewRepository = reviewRepository;
+        this.reviewService = reviewService;
         this.paisRepository = paisRepository;
         this.departmentRepository = departmentRepository;
         this.cityRepository = cityRepository;
@@ -308,6 +315,47 @@ public class DataInitializer implements ApplicationRunner {
         // ── Sample favorites (despues de usuarios y hoteles) ────────────────
         createFavorite(guestUser, poblado);
         createFavorite(guestUser, costaCaribe);
+
+        // ── Sample reviews (HU #28, despues de reservas y favoritos) ────────
+        // Usuarios propios para no alterar las reservas que cuentan los tests existentes.
+        // Puede valorar quien tenga una estadia terminada (check-out ya paso) en el hotel.
+        User travelerA = createUser("Valentina", "Ríos", "viajera@sweetnest.com", "Usuario123", userProfile);
+        User travelerB = createUser("Andrés", "Torres", "viajero@sweetnest.com", "Usuario123", userProfile);
+
+        createReservation(travelerA, firstUnitOf(poblado),      minusDays(30), minusDays(27), 2, ReservationStatus.COMPLETED);
+        createReservation(travelerA, firstUnitOf(costaCaribe),  minusDays(20), minusDays(16), 2, ReservationStatus.CONFIRMED);
+        createReservation(travelerA, firstUnitOf(hostalAndino), minusDays(12), minusDays(10), 1, ReservationStatus.CONFIRMED);
+        // valleReal: estadia terminada SIN resena -> para probar "Publicar resena" en vivo
+        createReservation(travelerA, firstUnitOf(valleReal),    minusDays(8),  minusDays(5),  2, ReservationStatus.CONFIRMED);
+        createReservation(travelerB, firstUnitOf(poblado),      minusDays(40), minusDays(36), 3, ReservationStatus.COMPLETED);
+        createReservation(travelerB, firstUnitOf(costaCaribe),  minusDays(15), minusDays(12), 4, ReservationStatus.CONFIRMED);
+
+        createReview(travelerA, poblado, 5,
+                "Excelente ubicación y el apartamento impecable. El check-in fue muy fácil y el anfitrión siempre respondió rápido.");
+        createReview(travelerB, poblado, 4,
+                "Muy cómodo y silencioso. Solo le faltaría una mejor cafetera, por lo demás todo perfecto.");
+        createReview(travelerA, costaCaribe, 4,
+                "La vista es lo mejor. La piscina estaba limpia y el personal fue amable.");
+        createReview(travelerB, costaCaribe, 3, null);
+        createReview(travelerA, hostalAndino, 5,
+                "Ideal para viajar solo: buen ambiente, camas cómodas y cerca de todo.");
+
+        for (Hotel h : List.of(poblado, costaCaribe, hostalAndino)) {
+            reviewService.recalculateRating(h);
+        }
+    }
+
+    private LocalDate minusDays(int days) {
+        return LocalDate.now().minusDays(days);
+    }
+
+    private void createReview(User user, Hotel hotel, int stars, String comment) {
+        Review review = new Review();
+        review.setUser(user);
+        review.setHotel(hotel);
+        review.setRevStars(stars);
+        review.setRevComment(comment);
+        reviewRepository.save(review);
     }
 
     private void createFavorite(User user, Hotel hotel) {
@@ -499,7 +547,43 @@ public class DataInitializer implements ApplicationRunner {
         unit.setUniState('A');
         hotel.getUnits().add(unit);
 
+        addPolicies(hotel);
+
         return hotelRepository.save(hotel);
+    }
+
+    /** HU #26: politicas de uso (cuidados y precauciones) estandar de cada alojamiento. */
+    private void addPolicies(Hotel hotel) {
+
+        String[][] policies = {
+                {"Check-in y check-out",
+                        "El check-in es de 3:00 PM a 9:00 PM y el check-out hasta las 11:00 AM. "
+                                + "La llegada anticipada o la salida tardía están sujetas a disponibilidad y deben coordinarse con el anfitrión."},
+                {"Cancelación",
+                        "Cancelación gratuita hasta 48 horas antes de la fecha de llegada. "
+                                + "Después de ese plazo se cobra el valor de la primera noche."},
+                {"Normas de la casa",
+                        "No se permite fumar en espacios interiores ni realizar fiestas o eventos. "
+                                + "Horario de silencio de 10:00 PM a 7:00 AM por respeto a los vecinos."},
+                {"Salud y seguridad",
+                        "El alojamiento cuenta con detector de humo, extintor y botiquín de primeros auxilios. "
+                                + "Se realiza limpieza y desinfección profunda entre cada estadía."},
+                {"Mascotas",
+                        "Se admiten mascotas solo con aviso previo al anfitrión. "
+                                + "El huésped es responsable de su cuidado y de cualquier daño que ocasionen."},
+                {"Cuidado del alojamiento",
+                        "Trata el mobiliario y los electrodomésticos con cuidado y reporta de inmediato cualquier daño o avería. "
+                                + "Los daños causados durante la estadía serán cobrados al huésped."}
+        };
+
+        for (int i = 0; i < policies.length; i++) {
+            HotelPolicy policy = new HotelPolicy();
+            policy.setPolTitle(policies[i][0]);
+            policy.setPolDescription(policies[i][1]);
+            policy.setPolOrder(i + 1);
+            policy.setHotel(hotel);
+            hotel.getPolicies().add(policy);
+        }
     }
 
     /** Fase 2: asigna el anfitrion de un hotel (hotUserSec). */

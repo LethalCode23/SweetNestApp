@@ -31,6 +31,10 @@ public interface ReservationRepository extends JpaRepository<Reservation, Intege
 
     long countByUnitUniSecAndResStatusIn(Integer uniSec, List<ReservationStatus> statuses);
 
+    /** HU #28: el usuario termino una estadia en el hotel (check-out ya paso) con alguno de esos estados. */
+    boolean existsByUserUserSecAndUnitHotelHotSecAndResStatusInAndResCheckOutLessThanEqual(
+            Long userSec, Integer hotSec, List<ReservationStatus> statuses, LocalDate checkOut);
+
     /**
      * Unidades del hotel con reservas activas (PENDING / CONFIRMED) que se cruzan
      * con el rango pedido. Se usa para la disponibilidad.

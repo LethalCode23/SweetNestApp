@@ -4,6 +4,7 @@ import com.dh.demo.dto.CategoryDto;
 import com.dh.demo.dto.FeatureDto;
 import com.dh.demo.dto.HotelDto;
 import com.dh.demo.dto.HotelImagesDto;
+import com.dh.demo.dto.HotelPolicyDto;
 import com.dh.demo.dto.HotelResponseDto;
 import com.dh.demo.entity.Hotel;
 import com.dh.demo.entity.HotelImages;
@@ -37,6 +38,9 @@ public class HotelMapper {
                 .imageUrls(mapImageUrls(hotel))
                 .categories(mapCategories(hotel))
                 .features(mapFeatures(hotel))
+                .policies(mapPolicies(hotel))
+                .ratingAvg(hotel.getHotRatingAvg())
+                .ratingCount(hotel.getHotRatingCount())
                 .build();
     }
 
@@ -57,6 +61,10 @@ public class HotelMapper {
         dto.setTypeName(hotel.getType() != null ? hotel.getType().getTypName() : null);
         dto.setHotConfirmReq(hotel.getHotConfirmReq());
         dto.setHostId(hotel.getHost() != null ? hotel.getHost().getUserSec() : null);
+        // El panel edita desde este DTO, por eso tambien lleva las politicas.
+        dto.setPolicies(mapPolicies(hotel));
+        dto.setRatingAvg(hotel.getHotRatingAvg());
+        dto.setRatingCount(hotel.getHotRatingCount());
 
         if (hotel.getHotelImages() != null && !hotel.getHotelImages().isEmpty()) {
             dto.setHotelImagesUrl(hotel.getHotelImages().stream()
@@ -126,6 +134,17 @@ public class HotelMapper {
 
         return hotel.getFeatures().stream()
                 .map(featureMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    private List<HotelPolicyDto> mapPolicies(Hotel hotel) {
+
+        if (hotel.getPolicies() == null) {
+            return List.of();
+        }
+
+        return hotel.getPolicies().stream()
+                .map(p -> new HotelPolicyDto(p.getPolSec(), p.getPolTitle(), p.getPolDescription()))
                 .collect(Collectors.toList());
     }
 }

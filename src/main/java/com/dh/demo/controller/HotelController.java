@@ -8,6 +8,7 @@ import com.dh.demo.dto.response.HotelUnavailableDatesResponse;
 import com.dh.demo.dto.response.SearchSuggestionDto;
 import com.dh.demo.service.IHotelService;
 import com.dh.demo.service.IReservationService;
+import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -32,14 +33,14 @@ public class HotelController {
     }
 
     @PostMapping("/save") // insert record
-    public ResponseEntity<HotelDto> save(@RequestBody HotelDto hotelDto) {
+    public ResponseEntity<HotelDto> save(@Valid @RequestBody HotelDto hotelDto) {
         HotelDto saved = service.save(hotelDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
     @PutMapping("/update/{id}") // update record
     public ResponseEntity<HotelDto> update(@PathVariable Integer id,
-                                           @RequestBody HotelDto hotelDto) {
+                                           @Valid @RequestBody HotelDto hotelDto) {
         HotelDto updated = service.update(id, hotelDto);
         return ResponseEntity.ok(updated);
     }

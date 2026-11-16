@@ -29,7 +29,7 @@ escribiendo en `target/` (lo mismo pasa con `sed -i`). Detalle en `docs/BITACORA
 H2 en memoria `SweetNestDB`, `ddl-auto=create-drop` → **no hay migraciones**.
 Todo el esquema sale de las entidades y los datos de `config/DataInitializer.java`
 (ejecuta en cada arranque; si se rompe el orden de creación, rompe la app).
-Orden obligatorio: tipos → hoteles → unidades → reservas → favoritos.
+Orden obligatorio: tipos → hoteles → unidades → reservas → favoritos → reseñas (+ recalcular promedio).
 
 ## Arquitectura y convenciones (seguir el estilo existente, no inventar otro)
 
@@ -92,6 +92,12 @@ Orden obligatorio: tipos → hoteles → unidades → reservas → favoritos.
 14. Favorito = **usuario + hotel** (no unidad), único por `UNIQUE (favUserSec, favHotSec)`; exige sesión.
     `PUT`/`DELETE /api/favorites/{hotSec}` son idempotentes. Borrar usuario u hotel borra sus favoritos (`ON DELETE CASCADE`).
 
+**Valoraciones** (`reviews`, HU #28):
+15. Puede valorar quien tenga en el hotel una reserva `CONFIRMED`/`COMPLETED` con `resCheckOut <= hoy`
+    (si no → `403/1021`). `COMPLETED` no lo asigna ningún proceso, por eso no se exige solo ese estado.
+16. Una valoración por **usuario + hotel** (`UNIQUE (revUserSec, revHotSec)`); volver a enviarla la actualiza.
+    `hotels.hotRatingAvg/hotRatingCount` es copia desnormalizada que recalcula `ReviewService` en cada guardado.
+
 ## Flujo de planes
 
 ```
@@ -106,7 +112,8 @@ docs/planes/
 - Al cerrar una fase: actualizar el bloque Estado del plan + agregar una entrada en `docs/BITACORA.md`.
 - Si se decide una regla nueva que va a durar, se suma a "Reglas de negocio" de este archivo.
 
-**Plan activo:** `docs/planes/en-curso/reservas.md`.
+**Qué hay pendiente:** leer primero `docs/planes/README.md` (índice de todos los planes por estado; mantenerlo al día).
+**Plan principal:** `docs/planes/en-curso/reservas.md`.
 
 ## Docs
 

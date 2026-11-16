@@ -1,5 +1,6 @@
 package com.dh.demo.dto;
 
+import jakarta.validation.Valid;
 import lombok.Getter;
 import lombok.Setter;
 import java.util.List;
@@ -27,6 +28,15 @@ public class HotelDto {
     private List<Integer> featureIds;
     private List<CategoryDto> categories;
     private List<FeatureDto> features;
+    /**
+     * Politicas de uso (HU #26), en orden. Al guardar: null = no cambia,
+     * lista (incluso vacia) = reemplaza todas las del hotel.
+     */
+    @Valid
+    private List<HotelPolicyDto> policies;
+    /** HU #28 (solo respuesta): promedio y cantidad de valoraciones para las cards. */
+    private double ratingAvg;
+    private int ratingCount;
 
     public HotelDto() {
 

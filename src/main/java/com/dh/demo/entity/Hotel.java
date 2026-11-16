@@ -64,6 +64,21 @@ public class Hotel {
     @OneToMany(mappedBy = "hotel", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<HotelImages> HotelImages = new ArrayList<>();
 
+    /**
+     * HU #28: promedio (1 decimal) y cantidad de valoraciones. Copia desnormalizada para las listas;
+     * la recalcula ReviewService cada vez que se guarda una valoracion.
+     */
+    @Column(name = "hotRatingAvg")
+    private double hotRatingAvg = 0;
+
+    @Column(name = "hotRatingCount")
+    private int hotRatingCount = 0;
+
+    /** Politicas de uso del alojamiento (HU #26). */
+    @OneToMany(mappedBy = "hotel", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("polOrder ASC")
+    private List<HotelPolicy> policies = new ArrayList<>();
+
     @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
             name = "hotel_category",
