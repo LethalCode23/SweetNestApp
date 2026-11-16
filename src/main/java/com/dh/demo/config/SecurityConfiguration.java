@@ -48,6 +48,8 @@ public class SecurityConfiguration {
                                 .requestMatchers(HttpMethod.GET, "/api/hotel/suggestions").permitAll()
                                 // calendario publico: dias sin unidades libres (solo fechas, sin datos de la reserva)
                                 .requestMatchers(HttpMethod.GET, "/api/hotel/*/unavailable-dates").permitAll()
+                                // HU #28: listado de resenas publico ("/*" no cubre /mine, que exige sesion)
+                                .requestMatchers(HttpMethod.GET, "/api/reviews/hotel/*").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/category/all").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/hotel-types/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/hotel-unit/hotel/**").permitAll()

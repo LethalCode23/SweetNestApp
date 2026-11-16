@@ -345,3 +345,87 @@ Plan: `docs/planes/completados/favoritos.md`.
 - Pendiente (DT-039 en SweetNestUI): los perfiles creados desde el panel no reciben el submódulo.
 - `docs/RBAC.md` actualizado. `mvnw.cmd test` OK.
 
+---
+
+## 2026-11-12 — HU #26: Políticas del producto
+
+- Nueva entidad `HotelPolicy` → tabla `hotel_policies` (prefijo `pol`: `polSec`, `polTitle`, `polDescription`,
+  `polOrder`, FK `polHotSec`). `Hotel.policies` es `@OneToMany` con `cascade=ALL`, `orphanRemoval` y `@OrderBy("polOrder ASC")`.
+- `HotelResponseDto.policies` (`List<HotelPolicyDto>`) viaja en el `GET /api/hotel/findDetailById/{id}` existente (público);
+  no se agregó endpoint ni CRUD de admin (pendiente si se necesita editar desde el panel).
+- `DataInitializer.createHotel` siembra 6 políticas estándar por hotel (`addPolicies`). Sin cambio de orden de creación.
+- `mvnw.cmd test`: 61/61 en verde.
+
+### Edición desde el panel (mismo día)
+
+- `HotelDto.policies` (`@Valid`) + `@Valid` en `save`/`update` de `HotelController`; `HotelPolicyDto` con `@NotBlank`/`@Size` (100 / 1000).
+- `HotelService.replacePolicies`: `null` = no cambia; lista = reemplaza en ese orden (orphanRemoval borra las quitadas).
+- `HotelMapper.toListDto` también devuelve `policies` (el panel edita desde ese DTO).
+- Nuevo `HotelPoliciesTests` (4 casos: reemplazo en orden, `[]` borra, ausente conserva, título vacío → 400). Total 65/65.
+- Ojo: correr `mvnw test` con el backend levantado recompila `target/` debajo del proceso y rompe el detalle con
+  `NoSuchMethodError`. Parar el backend antes o probar en una copia.
+
+---
+
+## 2026-11-12 — HU #28: Puntuar producto
+
+- Entidad `Review` (`reviews`, prefijo `rev`, `UNIQUE (revUserSec, revHotSec)`, `ON DELETE CASCADE`) + `ReviewRepository`.
+- `ReviewService`: elegibilidad = reserva `CONFIRMED`/`COMPLETED` con check-out ≤ hoy (`ReservationRepository.exists…`);
+  upsert (una por usuario + hotel); recalcula `Hotel.hotRatingAvg` (1 decimal) / `hotRatingCount`.
+- `ReviewController` `api/reviews`: `GET /hotel/{id}` (público, `permitAll`), `GET /hotel/{id}/mine`, `PUT /hotel/{id}`.
+  Mensajes `review.*` en los 3 properties. Código nuevo `REVIEW_NOT_ALLOWED(1021)` → 403.
+- `ratingAvg`/`ratingCount` en `HotelResponseDto` (detalle) y `HotelDto` (cards, favoritos).
+- Seed: usuarios `viajera@` / `viajero@` con estadías pasadas y 5 reseñas (Poblado 4.5, Costa Caribe 3.5, Hostal Andino 5.0).
+  Usuarios propios para no cambiar las reservas que cuentan los tests existentes.
+- Nuevo `ReviewsAcceptanceTests` (5). Total 70/70 (corrido en una copia, con el backend del usuario levantado).
+
+---
+
+## 2026-11-16 — Reservas · Fase 2 Bloque B: cruce de disponibilidad + bloqueo contra doble reserva
+
+- **Problema:** `ReservationService.create` no validaba la regla 6, así que se podían crear dos reservas activas
+  sobre la misma unidad y las mismas noches. `1011 UNIT_UNAVAILABLE` existía pero no se usaba.
+- `ReservationRepository.existsOverlap(unitId, checkIn, checkOut, occupying)`: cruce `checkIn < :checkOut AND checkOut > :checkIn`
+  con `PENDING`/`CONFIRMED`. El día de salida queda libre.
+- `HotelUnitRepository.findByIdForUpdate` (`@Lock(PESSIMISTIC_WRITE)` → `SELECT … FOR UPDATE`). `create` lee la unidad con este método,
+  así que dos reservas simultáneas de la misma unidad se procesan en serie y la segunda ya ve el cruce. Las demás unidades no se bloquean.
+- `create` lanza `UnitUnavailableException` (409/1011) después de validar fechas y capacidad. `confirm` no cambia, porque una `PENDING` ya ocupa la unidad.
+- Tests:
+  - `ReservasPhase2BAcceptanceTests` (6): mismo rango, cruce parcial, rango que envuelve, el día de salida queda libre,
+    una cancelada no bloquea, otra unidad del mismo hotel sí se puede reservar.
+  - `ReservasConcurrencyTests` (1, sin `@Transactional`): dos hilos con la misma unidad y el mismo rango → 1 guardada y 1 con `1011`.
+    Comprobado que **sin** el bloqueo el test falla (se guardan 2).
+- Total 77/77 (corrido en una copia, con el backend del usuario levantado). `API.md` §17 documenta el 409/1011.
+- **Frontend:** el Bloque D (reservar desde el detalle) debe mostrar el `message` del 409.
+
+---
+
+## 2026-11-16 — Perfiles: crear y editar funcionan (para el rediseño del panel, Fase 5 del front)
+
+- **Bug:** `POST /api/profile/save` respondía **500** siempre que el JSON no traía `proId`, porque `ProfileDto.proId` era `long`
+  y Jackson no puede asignarle `null`. Se cambió a `Long`.
+- `ProfileService.save` ahora:
+  - fuerza `id = null`, para que siempre sea un alta;
+  - guarda `isDefault`, que antes se perdía;
+  - aplica defaults: `proState='A'`, `isDefault='N'`, `hasControlAccess='N'`.
+- `ProfileService.update` ahora guarda también `isDefault` y `hasControlAccess`; antes solo guardaba el nombre y el estado.
+- **Regla nueva: siempre hay exactamente un perfil por defecto**, porque el registro usa `findByIsDefault('S')`, que devuelve un `Optional`:
+  - al marcar uno, los demás se desmarcan;
+  - desmarcar el único da `400/1001`;
+  - si el nombre está vacío → `400/1001`.
+- Nuevo `ProfilesTests` (5). Total 82/82, corrido en una copia.
+- Pendientes, registrados en `SweetNestUI/docs/DEUDA_TECNICA.md`:
+  - `api/profile` no exige `hasControlAccess` (DT-042);
+  - `DELETE` con usuarios da 500 (DT-043).
+
+---
+
+## 2026-11-16 — Reservas · Fase 5 (parcial): unidades libres por rango
+
+- Lo pide el Bloque D del front: el botón "Reservar ahora" no estaba conectado y para reservar hay que mandar un `unitId`.
+- `GET /api/hotel-unit/hotel/{hotSec}/available?checkIn&checkOut` (público; ya lo cubre `GET /api/hotel-unit/hotel/**`).
+  - `HotelUnitService.findAvailable` parte de las unidades activas y les resta `findBusyUnitIdsInHotel`, la consulta que ya existía.
+  - Usa las mismas validaciones que `ReservationService.create`: `1014` si el rango es inválido o faltan fechas (los params son `required=false` para no dar 500), `1015` si la entrada está en el pasado.
+- Nuevo `HotelUnitAvailabilityTests` (5): sin token, unidad reservada excluida, cancelada no bloquea, día de salida libre, 400.
+  Total 87/87 (corrido en una copia). `API.md` §17.
+

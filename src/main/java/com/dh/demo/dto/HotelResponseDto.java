@@ -26,4 +26,9 @@ public class HotelResponseDto {
     private List<String> imageUrls;
     private List<CategoryDto> categories;
     private List<FeatureDto> features;
+    /** Politicas de uso del alojamiento, en orden de presentacion. */
+    private List<HotelPolicyDto> policies;
+    /** HU #28: promedio (1 decimal, 0 sin valoraciones) y cantidad de valoraciones. */
+    private double ratingAvg;
+    private int ratingCount;
 }

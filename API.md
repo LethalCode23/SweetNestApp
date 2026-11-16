@@ -785,6 +785,20 @@ Gestión de hoteles: CRUD, listado paginado y búsqueda por filtros. / Hotel man
 | `categoryIds` | `List<Integer>` | IDs de categorías (al crear/actualizar) |
 | `categories` | `List<CategoryDto>` | Categorías (respuesta) |
 
+**Detalle (`GET /api/hotel/findDetailById/{id}` → `ApiResponse<HotelResponseDto>`)** incluye además
+`policies: List<HotelPolicyDto>` en orden de presentación (HU #26):
+
+```json
+"policies": [
+  { "polSec": 1, "polTitle": "Check-in y check-out", "polDescription": "El check-in es de 3:00 PM a 9:00 PM ..." }
+]
+```
+
+`HotelDto` (lista, `save`, `update`) también lleva `policies`. **Al guardar:**
+- `policies` ausente/`null` → no cambia las políticas del hotel.
+- `policies` con lista (incluso `[]`) → **reemplaza** todas, en ese orden (`polOrder` = posición).
+- Validación (`400 / VALIDATION_ERROR`): `polTitle` obligatorio, máx. 100; `polDescription` obligatoria, máx. 1000.
+
 ---
 
 ### `POST /api/hotel/save`
@@ -1369,11 +1383,15 @@ Gestión de perfiles/roles (CRUD completo). / Profile (role) management. Requier
 
 | Campo | Tipo | Descripción |
 | --- | --- | --- |
-| `proId` | `long` | ID (autogenerado) |
-| `proName` | `String` | Nombre del perfil |
-| `proState` | `Character` | Estado (`A`/`I`) |
-| `isDefault` | `Character` | Si es perfil por defecto (`S`/`N`) |
-| `hasControlAccess` | `Character` | Si tiene control de acceso RBAC (`S`/`N`) |
+| `proId` | `Long` | ID (autogenerado; en el alta no se envía) |
+| `proName` | `String` | Nombre del perfil (obligatorio → si falta, `400/1001`) |
+| `proState` | `Character` | Estado (`A`/`I`, por defecto `A`) |
+| `isDefault` | `Character` | Si es perfil por defecto (`S`/`N`, por defecto `N`) |
+| `hasControlAccess` | `Character` | Si tiene control de acceso RBAC (`S`/`N`, por defecto `N`) |
+
+**Perfil por defecto (2026-11-16):** siempre hay exactamente uno, porque el registro asigna ese perfil a las cuentas nuevas.
+Si un alta o edición llega con `isDefault='S'`, los demás perfiles quedan en `'N'`.
+Desmarcar el único perfil por defecto responde `400` con código `1001`: hay que marcar otro.
 
 ---
 
@@ -1818,6 +1836,40 @@ curl -s -X PUT -H "Authorization: Bearer $ADMIN_TOKEN" -H "Content-Type: applica
 | `1019` `HOST_NOT_ASSIGNED` | 409 | Un no-admin confirma una reserva cuyo hotel no tiene anfitrión |
 | `1020` `USER_NOT_HOST` | 409 | `hostId` apunta a un usuario sin `userHost='S'` |
 
+### `POST /api/reservations`: unidad ocupada (Fase 2 · Bloque B)
+
+Si la unidad ya tiene una reserva `PENDING` o `CONFIRMED` que se cruza con las fechas pedidas,
+la respuesta es `409` con código `1011`. Hay cruce cuando `existente.checkIn < nueva.checkOut` y `existente.checkOut > nueva.checkIn`.
+El día de salida queda libre: se puede entrar el mismo día en que sale otra reserva.
+Las reservas `CANCELLED` y `COMPLETED` no bloquean. Si llegan dos peticiones a la vez para la misma unidad,
+se procesan una detrás de otra (`SELECT … FOR UPDATE` sobre la unidad): solo una se guarda y la otra recibe `1011`.
+
+```bash
+curl -s -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"unitId":1,"checkIn":"2032-01-10","checkOut":"2032-01-14","guests":1}' \
+  http://localhost:8080/api/reservations
+# repetir la misma petición →
+# {"success":false,"message":"La unidad ya esta reservada en esas fechas","code":1011,"data":null}
+```
+
+| Código | HTTP | Cuándo / When |
+| --- | --- | --- |
+| `1011` `UNIT_UNAVAILABLE` | 409 | La unidad ya está reservada (PENDING/CONFIRMED) en un rango que se cruza |
+
+### `GET /api/hotel-unit/hotel/{hotSec}/available?checkIn=YYYY-MM-DD&checkOut=YYYY-MM-DD` (público)
+
+Devuelve las unidades **activas** del hotel que no tienen reservas `PENDING` o `CONFIRMED` cruzadas con `[checkIn, checkOut)`.
+Usa la misma regla de cruce que la creación de reservas, así que el día de salida queda libre. El frontend la usa en el detalle
+para que el usuario elija entre las unidades libres.
+
+- `checkIn`/`checkOut` ausentes o `checkOut <= checkIn` → `400/1014`; `checkIn` en el pasado → `400/1015`; hotel inexistente → `404/1007`.
+
+```bash
+curl -s "http://localhost:8080/api/hotel-unit/hotel/5/available?checkIn=2032-01-10&checkOut=2032-01-14"
+# {"success":true,"message":"Unidades disponibles obtenidas","code":0,
+#  "data":[{"uniSec":7,"hotSec":5,"uniName":"Habitación 102","uniCapacity":2,"uniPrice":180000,"uniState":"A"}]}
+```
+
 ---
 
 ## 18. Favoritos / Favorites — `/api/favorites`
@@ -1864,6 +1916,42 @@ Respuesta de `PUT` / `PUT` response:
 `data.hotel` uses the same shape as the `findByHotel` search cards.
 
 Seed: `usuario@sweetnest.com` arranca con 2 favoritos. / starts with 2 favorites.
+
+---
+
+## 19. Valoraciones / Reviews — `/api/reviews` (HU #28)
+
+Puede valorar quien tenga en el hotel una reserva `CONFIRMED` o `COMPLETED` con check-out **hoy o antes**.
+Una valoración por usuario + hotel: volver a enviar la **actualiza**. Cada guardado recalcula
+`ratingAvg` (1 decimal) y `ratingCount` del hotel, que salen en `findDetailById` (`HotelResponseDto`) y en las cards (`HotelDto`).
+
+| Método | Ruta | Acceso | Respuesta (`ApiResponse.data`) |
+|---|---|---|---|
+| GET | `/api/reviews/hotel/{hotSec}?page=0&size=5` | Público | `HotelReviewsResponse` |
+| GET | `/api/reviews/hotel/{hotSec}/mine` | Sesión | `{ canReview, review \| null }` |
+| PUT | `/api/reviews/hotel/{hotSec}` | Sesión | `HotelReviewsResponse` ya recalculado (página 0) |
+
+**Body PUT:** `{ "stars": 4, "comment": "opcional, máx. 1000" }` (`stars` 1–5 obligatorio; comentario vacío = sin comentario).
+
+**`HotelReviewsResponse`:**
+```json
+{
+  "ratingAvg": 4.5, "ratingCount": 2,
+  "distribution": [1, 1, 0, 0, 0],
+  "reviews": { "content": [ { "revSec": 1, "stars": 5, "comment": "…", "userName": "Valentina R.", "date": "2026-11-12T20:10:00" } ], "last": true, "number": 0 }
+}
+```
+`distribution` va de 5★ a 1★. `userName` = nombre + inicial del apellido.
+
+**Errores:** `400 / 1001` (estrellas fuera de 1–5) · `403 / 1021 REVIEW_NOT_ALLOWED` (sin estadía terminada) · `404 / 1007` (hotel).
+
+```bash
+curl -X PUT "http://localhost:8080/api/reviews/hotel/6" -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" -d '{"stars":4,"comment":"Muy buena ubicación"}'
+```
+
+Seed: `viajera@sweetnest.com` y `viajero@sweetnest.com` (clave `Usuario123`) tienen estadías pasadas y reseñas en
+Poblado, Costa Caribe y Hostal Andino. `viajera@` también tiene una estadía terminada **sin reseña** en Hotel Valle Real Cali.
 
 ---
 

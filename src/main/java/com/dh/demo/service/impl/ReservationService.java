@@ -18,6 +18,7 @@ import com.dh.demo.exception.InvalidStateTransitionException;
 import com.dh.demo.exception.ReservationInPastException;
 import com.dh.demo.exception.ReservationNotFoundException;
 import com.dh.demo.exception.UnitNotFoundException;
+import com.dh.demo.exception.UnitUnavailableException;
 import com.dh.demo.mapper.ReservationMapper;
 import com.dh.demo.repository.HotelRepository;
 import com.dh.demo.repository.HotelUnitRepository;
@@ -62,7 +63,9 @@ public class ReservationService implements IReservationService {
                 .orElseThrow(() -> new ForbiddenOperationException("No se pudo identificar al usuario"));
 
         // ── Regla 5: la unidad y su hotel deben estar activos ──
-        HotelUnit unit = hotelUnitRepository.findById(request.getUnitId())
+        // Se lee con bloqueo (FOR UPDATE): dos reservas simultaneas de la misma unidad
+        // se ejecutan una detras de otra, y la segunda ya ve el cruce (regla 6).
+        HotelUnit unit = hotelUnitRepository.findByIdForUpdate(request.getUnitId())
                 .orElseThrow(() -> new UnitNotFoundException(
                         "Unidad no encontrada con id: " + request.getUnitId()));
 
@@ -91,6 +94,11 @@ public class ReservationService implements IReservationService {
         if (request.getGuests() == null || request.getGuests() > unit.getUniCapacity()) {
             throw new GuestsExceedCapacityException(
                     "La capacidad maxima de la unidad es " + unit.getUniCapacity() + " huespedes");
+        }
+
+        // ── Regla 6: la unidad no puede tener una reserva activa que se cruce ──
+        if (reservationRepository.existsOverlap(unit.getUniSec(), checkIn, checkOut, OCCUPYING)) {
+            throw new UnitUnavailableException("La unidad ya esta reservada en esas fechas");
         }
 
         // ── Reglas 7 y 8: total calculado en backend y precio congelado ──
