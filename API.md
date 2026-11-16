@@ -125,8 +125,13 @@ El servicio usa **JWT (Bearer token)**. Para acceder a los recursos protegidos:
 | `/api/auth/**` | POST |
 | `/api/hotel/findByHotel/**` | GET |
 | `/api/hotel/findDetailById/**` | GET |
+| `/api/hotel/findById/**` | GET |
 | `/api/hotel/suggestions` | GET |
 | `/api/hotel/{hotSec}/unavailable-dates` | GET |
+| `/api/reviews/hotel/{hotSec}` | GET |
+| `/api/category/all` | GET |
+| `/api/hotel-types/**` | GET |
+| `/api/hotel-unit/hotel/**` (incluye `/available`) | GET |
 | `/hotel-images/**` | GET |
 | `/swagger-ui/**`, `/swagger-ui.html`, `/v3/api-docs/**` | GET |
 | `/h2-console/**` | — |
@@ -1966,6 +1971,8 @@ Poblado, Costa Caribe y Hostal Andino. `viajera@` también tiene una estadía te
 | FeatureController | `/api/feature` | POST `/`, GET `/all`, GET `/{id}`, PUT `/{id}`, DELETE `/{id}` |
 | HotelController | `/api/hotel` | POST `/save`, PUT `/update/{id}`, GET `/all`, DELETE `/delete/{id}`, GET `/findById/{id}`, GET `/findByHotel`, GET `/findDetailById/{id}`, GET `/suggestions`, GET `/{hotSec}/unavailable-dates` |
 | HotelImagesController | `/api/hotel-images` | POST `/save`, DELETE `/delete/{hotImgSec}` |
+| HotelTypeController | `/api/hotel-types` | GET `/`, GET `/actives`, GET `/{id}`, POST `/`, PUT `/{id}`, DELETE `/{id}` |
+| HotelUnitController | `/api/hotel-unit` | GET `/hotel/{hotSec}`, GET `/hotel/{hotSec}/available`, GET `/{id}`, POST `/`, PUT `/{id}`, DELETE `/{id}` |
 | ModuleController | `/api/module` | POST `/save` |
 | PaisController | `/api/country` | POST `/save`, GET `/all`, GET `/findById/{id}`, PUT `/update/{id}`, DELETE `/delete/{id}` |
 | PermissionProfilesModuleController | `/api/PermissionProMod` | POST/DELETE `/{profileId}/modules/{moduleId}/submodules/{subModuleId}` |
@@ -1974,5 +1981,6 @@ Poblado, Costa Caribe y Hostal Andino. `viajera@` también tiene una estadía te
 | RbacController | `/api/profiles` | GET `/{profileId}/modules`, PATCH `/{profileId}/modules/{moduleId}/entry-allowed` |
 | ReservationController | `/api/reservations` | POST `/`, GET `/me`, GET `/incoming`, GET `/`, PATCH `/{id}/confirm`, PATCH `/{id}/cancel` |
 | FavoriteController | `/api/favorites` | GET `/`, GET `/ids`, PUT `/{hotSec}`, DELETE `/{hotSec}` |
+| ReviewController | `/api/reviews` | GET `/hotel/{hotSec}`, GET `/hotel/{hotSec}/mine`, PUT `/hotel/{hotSec}` |
 | UserController | `/api/users` | GET `/all`, GET `/{userSec}`, GET `/findByEmail/{email}`, PUT `/{userSec}`, DELETE `/{userSec}` |
 | EmailController | `/api/emails` | POST `/send-simple-email` |

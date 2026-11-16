@@ -429,3 +429,10 @@ Plan: `docs/planes/completados/favoritos.md`.
 - Nuevo `HotelUnitAvailabilityTests` (5): sin token, unidad reservada excluida, cancelada no bloquea, día de salida libre, 400.
   Total 87/87 (corrido en una copia). `API.md` §17.
 
+---
+
+## 2026-11-16 — Docs: tablas índice de `API.md` al día
+
+- "Endpoints públicos" ahora coincide con `SecurityConfiguration` (faltaban `findById`, `reviews/hotel`, `category/all`, `hotel-types/**`, `hotel-unit/hotel/**`).
+- "Resumen general" suma `HotelTypeController`, `HotelUnitController` y `ReviewController`.
+
